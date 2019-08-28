@@ -55,18 +55,18 @@ Resources:
     SaUServerCD:
         Type: AWS::CloudFormation::Stack
         Properties:
-        TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-rest-service-cd-aws-cf.yml'
-        Parameters:
-            GitHubOwner: !Ref GitHubOwner
-            GitHubRepo: !Ref GitHubClientRepo
-            GitHubBranch: !Ref GitHubClientBranch
-            GitHubOAuthToken: !Ref GitHubOAuthToken
-            GitHubSecret: !Ref GitHubSecret
-            EnvironmentName: !Ref EnvironmentName
-            CertificateArn: !Ref CertificateArn
-            EnvSecretArn: !Ref EnvSecretArn
-            HostZoneName: !Ref HostZoneName
-            CloudFormationDeployRoleArn: !GetAtt SaUServerResources.Outputs.CloudFormationDeployRoleArn
+            TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-rest-service-cd-aws-cf.yml'
+            Parameters:
+                GitHubOwner: !Ref GitHubOwner
+                GitHubRepo: !Ref GitHubClientRepo
+                GitHubBranch: !Ref GitHubClientBranch
+                GitHubOAuthToken: !Ref GitHubOAuthToken
+                GitHubSecret: !Ref GitHubSecret
+                EnvironmentName: !Ref EnvironmentName
+                CertificateArn: !Ref CertificateArn
+                EnvSecretArn: !Ref EnvSecretArn
+                HostZoneName: !Ref HostZoneName
+                CloudFormationDeployRoleArn: !GetAtt SaUServerResources.Outputs.CloudFormationDeployRoleArn
 
     SaUClientHost:
         Type: AWS::CloudFormation::Stack
@@ -107,23 +107,23 @@ Resources:
     SaUAliasClient:
         Type: AWS::CloudFormation::Stack
         Properties:
-        TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-subdomain-alias-aws-cf.yml'
-        Parameters:
-            Subdomain: !Sub
-                - '${SubDomain}'
-                - { SubDomain: !If [IsProd, 'www', !Ref EnvironmentName] }
-            TargetDNSName: !GetAtt SaUDistribution.Outputs.SauDistributionDomainName
-            HostZoneName: !Ref HostZoneName
-            HostedZoneId: Z2FDTNDATAQYW2
+            TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-subdomain-alias-aws-cf.yml'
+            Parameters:
+                Subdomain: !Sub
+                    - '${SubDomain}'
+                    - { SubDomain: !If [IsProd, 'www', !Ref EnvironmentName] }
+                TargetDNSName: !GetAtt SaUDistribution.Outputs.SauDistributionDomainName
+                HostZoneName: !Ref HostZoneName
+                HostedZoneId: Z2FDTNDATAQYW2
 
     SaUAliasServer:
         Type: AWS::CloudFormation::Stack
         Properties:
-        TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-subdomain-alias-aws-cf.yml'
-        Parameters:
-            Subdomain: !Sub
-                - '${SubDomain}-api'
-                - { SubDomain: !If [IsProd, 'www', !Ref EnvironmentName] }
-            TargetDNSName: !GetAtt SaUServerResources.Outputs.PublicLoadBalancerDnsName
-            HostZoneName: !Ref HostZoneName
-            HostedZoneId: Z35SXDOTRQ7X7K
+            TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-subdomain-alias-aws-cf.yml'
+            Parameters:
+                Subdomain: !Sub
+                    - '${SubDomain}-api'
+                    - { SubDomain: !If [IsProd, 'www', !Ref EnvironmentName] }
+                TargetDNSName: !GetAtt SaUServerResources.Outputs.PublicLoadBalancerDnsName
+                HostZoneName: !Ref HostZoneName
+                HostedZoneId: Z35SXDOTRQ7X7K
