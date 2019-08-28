@@ -1,13 +1,16 @@
 Parameters:
     GitHubRepo:
         Type: String
+        Default: SaUServer
     GitHubBranch:
         Type: String
+        Default: develop
     GitHubOAuthToken:
         Type: String
         NoEcho: true
     GitHubOwner:
         Type: String
+        Default: swmcode
     GitHubSecret:
         Type: String
         Description: 'GitHub Webhook Secert'
@@ -247,7 +250,7 @@ Resources:
                             ActionMode: CREATE_UPDATE
                             RoleArn: !Ref CloudFormationDeployRoleArn
                             StackName: !Sub ${EnvironmentName}-Sau2Service
-                            TemplatePath: https://sau-devops.s3.amazonaws.com/sau2-rest-service-fargate-aws-cf.yml
+                            TemplatePath: Source::devOps/aws/sau2-rest-service-fargate-aws-cf.yml
                             Capabilities: CAPABILITY_IAM
                             ParameterOverrides: !Sub |
                                 {

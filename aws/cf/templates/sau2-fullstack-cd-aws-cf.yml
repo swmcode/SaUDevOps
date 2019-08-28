@@ -122,7 +122,7 @@ Resources:
         TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-subdomain-alias-aws-cf.yml'
         Parameters:
             Subdomain: !Sub
-                - '${SubDomain}'
+                - '${SubDomain}-api'
                 - { SubDomain: !If [IsProd, 'www', !Ref EnvironmentName] }
             TargetDNSName: !GetAtt SaUServerResources.Outputs.PublicLoadBalancerDnsName
             HostZoneName: !Ref HostZoneName
