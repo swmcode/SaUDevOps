@@ -48,7 +48,6 @@ Resources:
             TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-rest-service-cluster-aws-cf.yml'
             Parameters:
                 EnvironmentName: !Ref EnvironmentName
-                HostZoneName: !Ref HostZoneName
                 CertificateArn: !Ref CertificateArn
                 EnvSecretArn: !Ref EnvSecretArn
 
@@ -58,8 +57,8 @@ Resources:
             TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-rest-service-cd-aws-cf.yml'
             Parameters:
                 GitHubOwner: !Ref GitHubOwner
-                GitHubRepo: !Ref GitHubClientRepo
-                GitHubBranch: !Ref GitHubClientBranch
+                GitHubRepo: !Ref GitHubServerRepo
+                GitHubBranch: !Ref GitHubServerBranch
                 GitHubOAuthToken: !Ref GitHubOAuthToken
                 GitHubSecret: !Ref GitHubSecret
                 EnvironmentName: !Ref EnvironmentName
@@ -100,9 +99,9 @@ Resources:
                 GitHubOAuthToken: !Ref GitHubOAuthToken
                 GitHubSecret: !Ref GitHubSecret
                 EnvironmentName: !Ref EnvironmentName
-                Sau2ReactClientHostBucket: SaUClientHost.Outputs.Sau2ReactClientBucket
-                Sau2ReactClientHostBucketArn: SaUClientHost.Outputs.Sau2ReactClientBucketArn
-                Distribution: SaUDistribution.Outputs.Distribution
+                Sau2ReactClientHostBucket: !GetAtt SaUClientHost.Outputs.Sau2ReactClientBucket
+                Sau2ReactClientHostBucketArn: !GetAtt SaUClientHost.Outputs.Sau2ReactClientBucketArn
+                Distribution: !GetAtt SaUDistribution.Outputs.Distribution
 
     SaUAliasClient:
         Type: AWS::CloudFormation::Stack
@@ -121,9 +120,7 @@ Resources:
         Properties:
             TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-subdomain-alias-aws-cf.yml'
             Parameters:
-                Subdomain: !Sub
-                    - '${SubDomain}-api'
-                    - { SubDomain: !If [IsProd, 'www', !Ref EnvironmentName] }
+                Subdomain: !Sub '${EnvironmentName}-api'
                 TargetDNSName: !GetAtt SaUServerResources.Outputs.PublicLoadBalancerDnsName
                 HostZoneName: !Ref HostZoneName
                 HostedZoneId: Z35SXDOTRQ7X7K

@@ -3,7 +3,7 @@ Parameters:
   GitHubOwner:
     Type: String
     Default: swmcode
-  GiHubRepo:
+  GitHubRepo:
     Type: String
     Default: SaUClient
   GitHubBranch:
@@ -54,7 +54,7 @@ Resources:
                 - Name: SaUClient
               Configuration:
                 Owner: !Ref GitHubOwner
-                Repo: !Ref GiHubRepo
+                Repo: !Ref GitHubRepo
                 Branch: !Ref GitHubBranch
                 OAuthToken: !Ref GitHubOAuthToken
                 PollForSourceChanges: false
