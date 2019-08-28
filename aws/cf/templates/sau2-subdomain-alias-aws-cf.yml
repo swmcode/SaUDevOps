@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+    Subdomain:
+        Type: String
+        Description: 'e.g., www  prefix host zone name Subdomain.hostedzonename'
+    TargetDNSName:
+        Type: String
+        Description: 'Route53 Hosted Zone Name e.g., devte-Publi-G7W3CR99CCR8-1032137653.us-east-1.elb.amazonaws.com'
+    HostZoneName:
+        Type: String
+        Description: 'Route53 Hosted Zone Name e.g., submitanupdate2.com'
+    HostedZoneId:
+        Type: String
+
+Resources:
+    # creation of target environment sub domain alias record for configured host
+    SaU2DNS:
+        Type: AWS::Route53::RecordSetGroup
+        Properties:
+            HostedZoneName: !Sub '${HostZoneName}.'
+            RecordSets:
+                - Name: !Sub '${Subdomain}.${HostZoneName}.'
+                  Type: A
+                  AliasTarget:
+                      HostedZoneId: !Ref HostedZoneId
+                      DNSName: !Ref TargetDNSName
+                - Name: !Sub '${Subdomain}.${HostZoneName}.'
+                  Type: AAAA
+                  AliasTarget:
+                      HostedZoneId: !Ref HostedZoneId
+                      DNSName: !Ref TargetDNSName

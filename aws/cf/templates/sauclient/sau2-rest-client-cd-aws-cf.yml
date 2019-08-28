@@ -1,0 +1,243 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters: 
+  GitHubOwner:
+    Type: String
+    Default: swmcode
+  GiHubRepo:
+    Type: String
+    Default: SaUClient
+  GitHubBranch:
+    Type: String
+    Description: branch for this stack instances e.g., develop 
+    Default: develop
+  GitHubOAuthToken:
+    Type: String
+    Description: "GitHub personal access token"
+    NoEcho: true
+  GitHubSecret:
+    Type: String
+    Description: "GitHub Webhook Secert"
+    NoEcho: true
+  EnvironmentName:
+    Type: String
+    Description: "Target environment to deploy source. For production use 'prod'"
+  Sau2ReactClientHostBucket:
+    Type: String
+  Sau2ReactClientHostBucketArn: 
+    Type: String
+  Distribution:
+    Type: String
+
+Resources:
+  # read/pull source, build and deploy artifact
+  CodePipeline:
+    Type: 'AWS::CodePipeline::Pipeline'
+    Properties:
+      Name: !Ref EnvironmentName
+      RoleArn: !GetAtt CodePipeLineRole.Arn
+      ArtifactStore:
+        Location: !Ref Sau2ReactClientBuildPipelineBucket
+        Type: S3
+      Stages:
+        - 
+          # gitHub repo info for webhook creation and name of source output
+          Name: Source
+          Actions: 
+            - 
+              Name: SourceAction
+              ActionTypeId: 
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: 1
+              OutputArtifacts: 
+                - Name: SaUClient
+              Configuration:
+                Owner: !Ref GitHubOwner
+                Repo: !Ref GiHubRepo
+                Branch: !Ref GitHubBranch
+                OAuthToken: !Ref GitHubOAuthToken
+                PollForSourceChanges: false
+        - 
+          Name: Build
+          Actions: 
+            - 
+              # codebuild info and artifact name for building source and deploying artifact
+              Name: BuildAction
+              ActionTypeId: 
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              InputArtifacts: 
+                - 
+                  Name: SaUClient
+              OutputArtifacts: 
+                - 
+                  Name: SaUClientBuild
+              Configuration:
+                ProjectName: !Ref CodeBuild
+  # codebuild role for reading source, writing logs, creating cloudfront invalidation 
+  # and writing built artifact to s3 bucket, 
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - 
+            Effect: Allow
+            Principal:
+              Service:
+                - "codebuild.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: /service-role/
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement: 
+              - 
+                Effect: Allow
+                Action:
+                  - "s3:GetObject"
+                  - "s3:GetObjectVersion"
+                  - "s3:GetBucketVersioning"
+                  - "s3:PutObject"
+                Resource: 
+                  - !GetAtt Sau2ReactClientBuildPipelineBucket.Arn
+                  - !Join ['', [!GetAtt Sau2ReactClientBuildPipelineBucket.Arn, "/*"]]
+              - 
+                Effect: Allow
+                Action:
+                  - "s3:GetObject"
+                  - "s3:GetObjectVersion"
+                  - "s3:GetBucketVersioning"
+                  - "s3:PutObject"
+                  - "s3:PutObjectAcl"
+                Resource: 
+                  - !Ref Sau2ReactClientHostBucketArn
+                  - !Join ['', [!Ref Sau2ReactClientHostBucketArn, "/*"]]
+              -
+                Effect: Allow
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                  - "cloudfront:CreateInvalidation"
+                Resource:
+                  - "*"
+  # codepipeline role for writing source and starting build                  
+  CodePipeLineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - 
+            Effect: Allow
+            Principal:
+              Service:
+                - "codepipeline.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement: 
+              - 
+                Effect: Allow
+                Action:
+                  - "s3:GetObject"
+                  - "s3:GetObjectVersion"
+                  - "s3:GetBucketVersioning"
+                  - "s3:PutObject"
+                Resource: 
+                  - !GetAtt Sau2ReactClientBuildPipelineBucket.Arn
+                  - !Join ['', [!GetAtt Sau2ReactClientBuildPipelineBucket.Arn, "/*"]]
+              - 
+                Effect: Allow  
+                Action:
+                  - "codebuild:BatchGetBuilds"
+                  - "codebuild:StartBuild"
+                Resource: "*"
+  #GitHub Repo Webhook for push notifications on 'gitHub push' (code commits)             
+  CodePipelinGitHubWebhook:
+    Type: AWS::CodePipeline::Webhook
+    Properties:
+      Authentication: GITHUB_HMAC
+      AuthenticationConfiguration:
+        SecretToken: !Ref GitHubSecret
+      Filters:
+        - 
+          JsonPath: "$.ref"
+          MatchEquals: refs/heads/{Branch}
+      TargetPipeline: !Ref CodePipeline
+      TargetAction: SourceAction
+      Name: 
+          !Join [
+              '-',
+              [
+                  !Ref 'EnvironmentName',
+                  'CodePipelineSauClientGitHubWebhook',
+              ],
+          ]
+      TargetPipelineVersion: !GetAtt CodePipeline.Version
+      RegisterWithThirdParty: true
+  # CodeBuild for pulling source from s3 bucket, creation of build environment, installing app, 
+  # running test, building app, setting Cloudfront distribution access, caching and invalidations
+  # and copying artifact to to s3 bucket 
+  CodeBuild:
+    Type: 'AWS::CodeBuild::Project'
+    Properties:
+      Name: !Sub ${AWS::StackName}-CodeBuild
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+        Name: SaUClient
+      Source: 
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Type: LINUX_CONTAINER
+        # not sure about the use of AWS managed images, I think we want to create an image, so we 
+        # can control installed software including node version so we have consistency across
+        # builds
+        Image: "aws/codebuild/standard:2.0"
+        ImagePullCredentialsType: CODEBUILD
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Sub |
+          version: 0.2
+          phases:
+            install:
+              runtime-versions:
+                nodejs: 10
+            pre_build:
+              commands:
+                - echo Installing source NPM dependencies...
+                - npm install
+                - CI=true npm test 
+            build:
+              commands:
+                - echo Build started on `date`
+                - npm run build
+            post_build:
+              commands:
+                # provide public read access to root
+                - aws s3 cp --recursive --acl public-read ./build s3://${Sau2ReactClientHostBucket}/${EnvironmentName}/
+                # no cachey of index and service worker, other assests can be cached for long TTL defaults thanks to the use of hash in file names
+                - aws s3 cp --acl public-read --cache-control="max-age=0, no-cache, no-store, must-revalidate" ./build/service-worker.js s3://${Sau2ReactClientHostBucket}/${EnvironmentName}/
+                - aws s3 cp --acl public-read --cache-control="max-age=0, no-cache, no-store, must-revalidate" ./build/index.html s3://${Sau2ReactClientHostBucket}/${EnvironmentName}/
+                # again, as with caching, we need to force CDN to invalidate index and service worker so updates are served
+                - aws cloudfront create-invalidation --distribution-id ${Distribution} --paths /index.html /service-worker.js
+          artifacts:
+            files:
+              - '**/*'
+            base-directory: build
+  #s3 bucket for storing build source and artifact         
+  Sau2ReactClientBuildPipelineBucket: 
+    Type: 'AWS::S3::Bucket'
+    Properties: {}

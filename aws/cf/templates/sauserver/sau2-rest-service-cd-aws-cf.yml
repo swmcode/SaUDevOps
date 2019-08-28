@@ -1,0 +1,266 @@
+Parameters:
+    GitHubRepo:
+        Type: String
+    GitHubBranch:
+        Type: String
+    GitHubOAuthToken:
+        Type: String
+        NoEcho: true
+    GitHubOwner:
+        Type: String
+    GitHubSecret:
+        Type: String
+        Description: 'GitHub Webhook Secert'
+        NoEcho: true
+    EnvironmentName:
+        Type: String
+    CertificateArn:
+        Type: String
+        Description: ARN of the Amazon Certificate Manager SSL certificate to use for this app
+    EnvSecretArn:
+        Type: String
+        Description: ARN of the AWS Secrets Manager secert for environments' vars
+    HostZoneName:
+        Type: String
+        Description: 'Route53 Hosted Zone Name'
+        Default: submitanupdate2.com
+    CloudFormationDeployRoleArn:
+        Type: String
+
+Resources:
+    # Create the ECR respository to hold built docker images (i think we want to pass this in as an existing AWS ECR)
+    Repository:
+        Type: AWS::ECR::Repository
+        DeletionPolicy: Retain
+
+    # A role used to give CodeBuild permission to access code,
+    # build it, and upload the build results to ECR
+    CodeBuildServiceRole:
+        Type: AWS::IAM::Role
+        Properties:
+            Path: /
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service: codebuild.amazonaws.com
+                      Action: sts:AssumeRole
+            Policies:
+                - PolicyName: root
+                  PolicyDocument:
+                      Version: 2012-10-17
+                      Statement:
+                          - Resource: '*'
+                            Effect: Allow
+                            Action:
+                                - logs:CreateLogGroup
+                                - logs:CreateLogStream
+                                - logs:PutLogEvents
+                                - ecr:GetAuthorizationToken
+                          - Resource: !Sub arn:aws:s3:::${Sau2ServerArtifactBucket}/*
+                            Effect: Allow
+                            Action:
+                                - s3:GetObject
+                                - s3:PutObject
+                                - s3:GetObjectVersion
+                          - Resource: !Sub arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${Repository}
+                            Effect: Allow
+                            Action:
+                                - ecr:GetDownloadUrlForLayer
+                                - ecr:BatchGetImage
+                                - ecr:BatchCheckLayerAvailability
+                                - ecr:PutImage
+                                - ecr:InitiateLayerUpload
+                                - ecr:UploadLayerPart
+                                - ecr:CompleteLayerUpload
+
+    # Role used to give CodePipeline to release a build.
+    CodePipelineServiceRole:
+        Type: AWS::IAM::Role
+        Properties:
+            Path: /
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service: codepipeline.amazonaws.com
+                      Action: sts:AssumeRole
+            Policies:
+                - PolicyName: root
+                  PolicyDocument:
+                      Version: 2012-10-17
+                      Statement:
+                          # Allow codepipeline to put artifacts in the S3 bucket
+                          # as well as get artifacts back out of it.
+                          - Resource:
+                                - !Sub arn:aws:s3:::${Sau2ServerArtifactBucket}/*
+                            Effect: Allow
+                            Action:
+                                - s3:PutObject
+                                - s3:GetObject
+                                - s3:GetObjectVersion
+                                - s3:GetBucketVersioning
+                          # Allow codepipeline to build code builds
+                          - Resource: '*'
+                            Effect: Allow
+                            Action:
+                                - codebuild:StartBuild
+                                - codebuild:BatchGetBuilds
+                                - iam:PassRole
+                          # Allow codepipeline to deploy cloudformation stacks
+                          - Effect: Allow
+                            Action:
+                                - cloudformation:CreateChangeSet
+                                - cloudformation:CreateStack
+                                - cloudformation:CreateUploadBucket
+                                - cloudformation:DeleteStack
+                                - cloudformation:Describe*
+                                - cloudformation:List*
+                                - cloudformation:UpdateStack
+                                - cloudformation:ValidateTemplate
+                                - cloudformation:ExecuteChangeSet
+                            Resource: '*'
+
+    # While the build is in progress we need a place to store artifacts
+    Sau2ServerArtifactBucket:
+        Type: AWS::S3::Bucket
+        DeletionPolicy: Retain
+
+    #GitHub Repo Webhook for push notifications on 'gitHub push' (code commits)
+    CodePipelineGitHubWebhook:
+        Type: AWS::CodePipeline::Webhook
+        Properties:
+            Authentication: GITHUB_HMAC
+            AuthenticationConfiguration:
+                SecretToken: !Ref GitHubSecret
+            Filters:
+                - JsonPath: '$.ref'
+                  MatchEquals: refs/heads/{Branch}
+            TargetPipeline: !Ref Pipeline
+            TargetAction: SourceAction
+            Name:
+                !Join [
+                    '-',
+                    [
+                        !Ref 'EnvironmentName',
+                        'CodePipelineSauServerGitHubWebhook',
+                    ],
+                ]
+            TargetPipelineVersion: !GetAtt Pipeline.Version
+            RegisterWithThirdParty: true
+
+    # This is the definition of how to build the code in the repository
+    CodeBuildProject:
+        Type: AWS::CodeBuild::Project
+        Properties:
+            Artifacts:
+                Type: CODEPIPELINE
+            Source:
+                Type: CODEPIPELINE
+                BuildSpec: |
+                    version: 0.2
+                    phases:
+                      pre_build:
+                        commands:
+                          - $(aws ecr get-login --no-include-email)
+                          # TODO: want to be more explicted with tagging, like to use semantic versioning, also include tags for commit and branch
+                          - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+                          - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+                      build:
+                        commands:
+                          - docker build --tag "${IMAGE_URI}" .
+                      post_build:
+                        commands:
+                          - docker push "$IMAGE_URI"
+                          - printf '{"ImageUri":"%s"}' "$IMAGE_URI" > build.json
+                    artifacts:
+                      files: build.json
+            Environment:
+                ComputeType: BUILD_GENERAL1_SMALL
+                Image: aws/codebuild/docker:17.09.0
+                Type: LINUX_CONTAINER
+                EnvironmentVariables:
+                    - Name: AWS_DEFAULT_REGION
+                      Value: !Ref AWS::Region
+                    - Name: REPOSITORY_URI
+                      Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+            Name: !Ref AWS::StackName
+            ServiceRole: !Ref CodeBuildServiceRole
+
+    # This pipeline defines the steps to build, deploy, and release the application
+    Pipeline:
+        Type: AWS::CodePipeline::Pipeline
+        Properties:
+            RoleArn: !GetAtt CodePipelineServiceRole.Arn
+            ArtifactStore:
+                Type: S3
+                Location: !Ref Sau2ServerArtifactBucket
+            Stages:
+                # First we have to pull the source code from the GitHub repository.
+                - Name: Source
+                  Actions:
+                      - Name: SourceAction
+                        ActionTypeId:
+                            Category: Source
+                            Owner: ThirdParty
+                            Version: 1
+                            Provider: GitHub
+                        Configuration:
+                            Owner: !Ref GitHubOwner
+                            Repo: !Ref GitHubRepo
+                            Branch: !Ref GitHubBranch
+                            OAuthToken: !Ref GitHubOAuthToken
+                            PollForSourceChanges: false
+                        OutputArtifacts:
+                            - Name: Source
+                        RunOrder: 1
+
+                # build the SaU2Server docker image
+                - Name: Sau2ServerImage
+                  Actions:
+                      - Name: Build
+                        ActionTypeId:
+                            Category: Build
+                            Owner: AWS
+                            Version: 1
+                            Provider: CodeBuild
+                        Configuration:
+                            ProjectName: !Ref CodeBuildProject
+                        InputArtifacts:
+                            - Name: Source
+                        OutputArtifacts:
+                            - Name: BuildOutput
+                        RunOrder: 1
+
+                # Finally we deploy the Fargate service to the cluster
+                - Name: Deploy
+                  Actions:
+                      - Name: Deploy
+                        ActionTypeId:
+                            Category: Deploy
+                            Owner: AWS
+                            Version: 1
+                            Provider: CloudFormation
+                        Configuration:
+                            ActionMode: CREATE_UPDATE
+                            RoleArn: !Ref CloudFormationDeployRoleArn
+                            StackName: !Sub ${EnvironmentName}-Sau2Service
+                            TemplatePath: https://sau-devops.s3.amazonaws.com/sau2-rest-service-fargate-aws-cf.yml
+                            Capabilities: CAPABILITY_IAM
+                            ParameterOverrides: !Sub |
+                                {
+                                  "EnvironmentName": "${EnvironmentName}",
+                                  "EnvSecretArn": "${EnvSecretArn}",
+                                  "ImageUrl": {
+                                    "Fn::GetParam" : ["BuildOutput", "build.json", "ImageUri"]
+                                  }
+                                }
+                        InputArtifacts:
+                            - Name: Source
+                            - Name: BuildOutput
+
+Outputs:
+    PipelineUrl:
+        Value: !Sub https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${Pipeline}

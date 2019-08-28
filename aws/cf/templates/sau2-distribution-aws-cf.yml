@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+    Subdomain:
+        Type: String
+        Description: 'e.g., www  prefix host zone name Subdomain.hostedzonename'
+    EnvironmentName:
+        Type: String
+        Description: 'e.g., qa, dev, prod (prod=www (subdomain))'
+    ClientOriginID:
+        Type: String
+        Description: 'Unique ID for Client Origin'
+    ClientDomainName:
+        Type: String
+        Description: 'Route53 Hosted Zone Name e.g., sau-react-client-dev4-sau2reactclientbucket-j391snzh343r.s3.amazonaws.com'
+    ServerOriginID:
+        Type: String
+        Description: 'Unique ID for Server (API) Origin'
+    ServerDomainName:
+        Type: String
+        Description: 'Route53 Hosted Zone Name e.g., devte-Publi-G7W3CR99CCR8-1032137653.us-east-1.elb.amazonaws.com'
+    HostZoneName:
+        Type: String
+        Description: 'Route53 Hosted Zone Name e.g., submitanupdate2.com'
+    CertificateArn:
+        Type: String
+        Description: 'ARN of the Amazon Certificate Manager SSL certificate to use for this app'
+
+Resources:
+    # CloudFront Distribution for mapping of alias and creation of origin for s3 deployed artifact
+    # both are prefixed with target environment
+    Distribution:
+        Type: 'AWS::CloudFront::Distribution'
+        Properties:
+            DistributionConfig:
+                PriceClass: PriceClass_100
+                HttpVersion: http2
+                IPV6Enabled: true
+                Aliases:
+                    - !Sub '${Subdomain}.${HostZoneName}'
+                Origins:
+                    - DomainName: !Ref ClientDomainName
+                      Id: !Ref ClientOriginID
+                      OriginPath: !Sub '/${EnvironmentName}'
+                      S3OriginConfig:
+                          OriginAccessIdentity: ''
+                    - DomainName: !Ref ServerDomainName
+                      Id: !Ref ServerOriginID
+                      CustomOriginConfig:
+                          HTTPPort: 80
+                          HTTPSPort: 443
+                          OriginKeepaliveTimeout: 5
+                          OriginProtocolPolicy: 'http-only'
+                          OriginReadTimeout: 30
+                          OriginSSLProtocols:
+                              - 'TLSv1'
+                              - 'TLSv1.1'
+                              - 'TLSv1.2'
+                DefaultRootObject: index.html
+                Enabled: true
+                DefaultCacheBehavior:
+                    MinTTL: 0
+                    MaxTTL: 31536000
+                    AllowedMethods:
+                        - HEAD
+                        - GET
+                    Compress: true
+                    ForwardedValues:
+                        QueryString: false
+                    TargetOriginId: !Ref ClientOriginID
+                    ViewerProtocolPolicy: 'redirect-to-https'
+                CacheBehaviors:
+                    - TargetOriginId: !Ref ServerOriginID
+                      ViewerProtocolPolicy: 'redirect-to-https'
+                      PathPattern: 'api/*'
+                      ForwardedValues:
+                          QueryString: true
+                      MinTTL: 0
+                      AllowedMethods:
+                          - 'HEAD'
+                          - 'DELETE'
+                          - 'POST'
+                          - 'GET'
+                          - 'OPTIONS'
+                          - 'PUT'
+                          - 'PATCH'
+                      SmoothStreaming: false
+                      DefaultTTL: 0
+                      MaxTTL: 0
+                      Compress: true
+                # this is a trick for single page apps that do client side routing, forces client requets
+                # all return index.html and client can then handle path/resource errors
+                CustomErrorResponses:
+                    - ErrorCachingMinTTL: 604800
+                      ErrorCode: 403
+                      ResponseCode: 200
+                      ResponsePagePath: '/index.html'
+                    - ErrorCachingMinTTL: 604800
+                      ErrorCode: 404
+                      ResponseCode: 200
+                      ResponsePagePath: '/index.html'
+                # cert to use for SSL/TLS (HTTPS)
+                ViewerCertificate:
+                    AcmCertificateArn: !Ref CertificateArn
+                    MinimumProtocolVersion: TLSv1.1_2016
+                    SslSupportMethod: sni-only
+
+Outputs:
+    Distribution:
+        Value: !Ref Distribution
+
+    SauDistributionDomainName:
+        Description: Distribution DomainName for sau environment
+        Value: !GetAtt Distribution.DomainName

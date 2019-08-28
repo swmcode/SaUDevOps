@@ -1,0 +1,129 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+    GitHubOwner:
+        Type: String
+        Default: swmcode
+    GitHubClientRepo:
+        Type: String
+        Default: SaUClient
+    GitHubClientBranch:
+        Type: String
+        Default: develop
+    GitHubServerRepo:
+        Type: String
+        Default: SaUServer
+    GitHubServerBranch:
+        Type: String
+        Default: develop
+    GitHubOAuthToken:
+        Type: String
+        Description: 'GitHub personal access token'
+        NoEcho: true
+    GitHubSecret:
+        Type: String
+        Description: 'GitHub Webhook Secert'
+        NoEcho: true
+    EnvironmentName:
+        Type: String
+        Description: "Target environment to deploy source. For production use 'prod'"
+    CertificateArn:
+        Type: String
+        Description: ARN of the Amazon Certificate Manager SSL certificate to use for this app
+    EnvSecretArn:
+        Type: String
+        Description: ARN of the AWS Secrets Manager secert for environments' vars
+    HostZoneName:
+        Type: String
+        Description: 'Route53 Hosted Zone Name'
+        Default: submitanupdate2.com
+
+Conditions:
+    # determines if passed target environment is 'prod'
+    IsProd: !Equals [!Ref EnvironmentName, 'prod']
+
+Resources:
+    SaUServerResources:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-rest-service-cluster-aws-cf.yml'
+            Parameters:
+                EnvironmentName: !Ref EnvironmentName
+                HostZoneName: !Ref HostZoneName
+                CertificateArn: !Ref CertificateArn
+                EnvSecretArn: !Ref EnvSecretArn
+
+    SaUServerCD:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+        TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-rest-service-cd-aws-cf.yml'
+        Parameters:
+            GitHubOwner: !Ref GitHubOwner
+            GitHubRepo: !Ref GitHubClientRepo
+            GitHubBranch: !Ref GitHubClientBranch
+            GitHubOAuthToken: !Ref GitHubOAuthToken
+            GitHubSecret: !Ref GitHubSecret
+            EnvironmentName: !Ref EnvironmentName
+            CertificateArn: !Ref CertificateArn
+            EnvSecretArn: !Ref EnvSecretArn
+            HostZoneName: !Ref HostZoneName
+            CloudFormationDeployRoleArn: !GetAtt SaUServerResources.Outputs.CloudFormationDeployRoleArn
+
+    SaUClientHost:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-rest-client-host-aws-cf.yml'
+
+    SaUDistribution:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-distribution-aws-cf.yml'
+            Parameters:
+                Subdomain: !Sub
+                    - '${SubDomain}'
+                    - { SubDomain: !If [IsProd, 'www', !Ref EnvironmentName] }
+                EnvironmentName: !Ref EnvironmentName
+                ClientOriginID: !GetAtt SaUClientHost.Outputs.Sau2ReactClientBucketArn
+                ClientDomainName: !GetAtt SaUClientHost.Outputs.Sau2ReactClientBucketDomainName
+                ServerOriginID: !GetAtt SaUServerResources.Outputs.PublicLoadBalancerDnsName
+                ServerDomainName: !GetAtt SaUServerResources.Outputs.PublicLoadBalancerDnsName
+                HostZoneName: !Ref HostZoneName
+                CertificateArn: !Ref CertificateArn
+
+    SaUClientCD:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-rest-client-cd-aws-cf.yml'
+            Parameters:
+                GitHubOwner: !Ref GitHubOwner
+                GitHubRepo: !Ref GitHubClientRepo
+                GitHubBranch: !Ref GitHubClientBranch
+                GitHubOAuthToken: !Ref GitHubOAuthToken
+                GitHubSecret: !Ref GitHubSecret
+                EnvironmentName: !Ref EnvironmentName
+                Sau2ReactClientHostBucket: SaUClientHost.Outputs.Sau2ReactClientBucket
+                Sau2ReactClientHostBucketArn: SaUClientHost.Outputs.Sau2ReactClientBucketArn
+                Distribution: SaUDistribution.Outputs.Distribution
+
+    SaUAliasClient:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+        TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-subdomain-alias-aws-cf.yml'
+        Parameters:
+            Subdomain: !Sub
+                - '${SubDomain}'
+                - { SubDomain: !If [IsProd, 'www', !Ref EnvironmentName] }
+            TargetDNSName: !GetAtt SaUDistribution.Outputs.SauDistributionDomainName
+            HostZoneName: !Ref HostZoneName
+            HostedZoneId: Z2FDTNDATAQYW2
+
+    SaUAliasServer:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+        TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-subdomain-alias-aws-cf.yml'
+        Parameters:
+            Subdomain: !Sub
+                - '${SubDomain}'
+                - { SubDomain: !If [IsProd, 'www', !Ref EnvironmentName] }
+            TargetDNSName: !GetAtt SaUServerResources.Outputs.PublicLoadBalancerDnsName
+            HostZoneName: !Ref HostZoneName
+            HostedZoneId: Z35SXDOTRQ7X7K

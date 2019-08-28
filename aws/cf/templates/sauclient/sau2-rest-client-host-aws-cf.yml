@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+    # s3 bucket for web servering React app (static files)
+    Sau2ReactClientBucket:
+        Type: 'AWS::S3::Bucket'
+        Properties:
+            WebsiteConfiguration:
+                #not sure we want to obscure errors for user
+                ErrorDocument: index.html
+                IndexDocument: index.html
+
+Outputs:
+    Sau2ReactClientBucket:
+        Value: !Ref Sau2ReactClientBucket
+
+    Sau2ReactClientBucketDomainName:
+        Description: Sau2ReactClientBucket domain name for sau environment artifact
+        Value: !GetAtt Sau2ReactClientBucket.DomainName
+
+    Sau2ReactClientBucketArn:
+        Description: Sau2ReactClientBucket ARN for sau environment artifact
+        Value: !GetAtt Sau2ReactClientBucket.Arn
