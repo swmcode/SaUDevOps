@@ -11,13 +11,13 @@ Parameters:
         Description: 'Unique ID for Client Origin'
     ClientDomainName:
         Type: String
-        Description: 'Route53 Hosted Zone Name e.g., sau-react-client-dev4-sau2reactclientbucket-j391snzh343r.s3.amazonaws.com'
+        Description: 'Client origin Domain Name e.g., sau-react-client-dev4-sau2reactclientbucket-j391snzh343r.s3.amazonaws.com'
     ServerOriginID:
         Type: String
         Description: 'Unique ID for Server (API) Origin'
     ServerDomainName:
         Type: String
-        Description: 'Route53 Hosted Zone Name e.g., devte-Publi-G7W3CR99CCR8-1032137653.us-east-1.elb.amazonaws.com'
+        Description: 'Server origin Domain Name e.g., devte-Publi-G7W3CR99CCR8-1032137653.us-east-1.elb.amazonaws.com'
     HostZoneName:
         Type: String
         Description: 'Route53 Hosted Zone Name e.g., submitanupdate2.com'
