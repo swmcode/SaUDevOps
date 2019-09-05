@@ -1,6 +1,6 @@
 # SaU2 Application Deployment with AWS Cloud Formation
 
-The guide walks you through the process of deploying a production grade instance of SaU2 application this software on a AWS account. The deployed application will have:
+The guide walks you through the process of deploying a production grade instance of SaU2 application software on a AWS account. The deployed application will have:
 
 -   [Single CloudFront distribution](https://aws.amazon.com/blogs/networking-and-content-delivery/dynamic-whole-site-delivery-with-amazon-cloudfront/) for hosting/servering both React Client (static content) and REST API (dynamic content)
     -   Scalability and performance
@@ -37,7 +37,7 @@ Then we need to select that we want a "public certificate" because this is a cer
 
 Then add the list of domains that should be covered by the SSL certificate. For maximum flexibility I prefer to have both the bare domain and a wildcard domain in the same certificate:
 
-<img src='https://github.com/swmcode/SaUDevOps/tree/master/aws/cf/docs/images/cert-domain-list.jpg' width='50%' />
+<img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/cert-domain-list.jpg' width='50%' />
 
 This allows me to serve HTTPS traffic on https://submitanupdate2.com as well as on any subdomains if for example I want to have https://dev1.submitanupdate2.com
 
