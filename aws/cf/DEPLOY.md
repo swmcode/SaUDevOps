@@ -2,7 +2,7 @@
 
 The guide walks you through the process of deploying a production grade instance of SaU2 application software on a AWS account. The deployed application will have:
 
--   [Single CloudFront distribution](https://aws.amazon.com/blogs/networking-and-content-delivery/dynamic-whole-site-delivery-with-amazon-cloudfront/) for hosting/servering both React Client (static content) and REST API (dynamic content)
+-   [Single CloudFront distribution](https://aws.amazon.com/blogs/networking-and-content-delivery/dynamic-whole-site-delivery-with-amazon-cloudfront/) for hosting/serving both React Client (static content) and REST API (dynamic content)
     -   Scalability and performance
     -   Negate CORS
     -   SSL Termination
@@ -17,7 +17,7 @@ The guide walks you through the process of deploying a production grade instance
 
 ## 1. Create a domain name to host the application
 
-Go to [Route 53](https://console.aws.amazon.com/route53/home?region=us-east-1#DomainListing:) and you'll see a box to "Register a domain". Go ahead and purchase a domain name of your choice.
+Go to [Route 53](https://console.aws.amazon.com/route53/home?region=us-east-1#DomainListing:) and you'll see a box to "Register a domain".
 
 Once your domain is purchased and processed you'll see it show up on [your list of domains](https://console.aws.amazon.com/route53/home?#DomainListing:):
 
@@ -25,9 +25,9 @@ Once your domain is purchased and processed you'll see it show up on [your list 
 
 Now go to [Amazon Certificate Manager](https://console.aws.amazon.com/acm/home) to get a free SSL certificate for the domain. Click the "Request a certificate" button.
 
-Then we need to select that we want a "public certificate" because this is a certificate public web browsers will use for communicating securely with the chat app.
+Then select a "public certificate" because this is the certificate public web browsers will use for communicating securely with SaU application.
 
-Then add the list of domains that should be covered by the SSL certificate. For maximum flexibility I prefer to have both the bare domain and a wildcard domain in the same certificate:
+Then add the list of domains that should be covered by the SSL certificate --the pattern we use with stack creation is to create a subdomain using the provided "environment name", to support any subdomain use the wildcard for subdomain. You may also want to specify the "bare domain" in the same certificate:
 
 <img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/cert-domain-list.jpg' width='50%' />
 
@@ -47,12 +47,12 @@ Go to your [Github settings to generate a new token](https://github.com/settings
 
 These two permissions will allow AWS CodePipeline to monitor the Github repo for changes, and react to updates by redeploying the application.
 
-## 4. Create Secert for Environment Var JSON Object (String)
+## 4. Create Secret for Environment Var JSON Object (String)
 
 These instructions are for the fullstack deployment using template
-[sau2-fullstack-cd-aws-cf.yml](https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/templates/sau2-fullstack-cd-aws-cf.yml) these templates takes a parameter `EnvSecretArn` which is the ARN for a AWS Secret Manager Key whose value is a JSON object String containing key:Value pairs for all required and optional environment vars, including sensitive data.
+[sau2-fullstack-cd-aws-cf.yml](https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/templates/sau2-fullstack-cd-aws-cf.yml) this template takes a parameter `EnvSecretArn` which is the ARN for a AWS Secret Manager Key whose value is a JSON object String containing key:Value pairs for all required and optional environment vars, including sensitive data.
 
-Futher documentation about SaU2Server Environment Variables can be found in [SaU2Server repo README.md](https://github.com/swmcode/SaUServer/blob/develop/README.md)
+Further documentation about SaU2Server Environment Variables can be found in [SaU2Server repo README.md](https://github.com/swmcode/SaUServer/blob/develop/README.md)
 
 Got to [AWS Secrets Manager](https://us-east-1.console.aws.amazon.com/secretsmanager/home?region=us-east-1#/listSecrets) for selected/desired region. Click "Store a new secret"
 
@@ -66,7 +66,7 @@ Complete the entry steps to create key (see following screen shot for meaningful
 
 ## 5. Deploy SuA2 Application Fullstack on your account
 
-The following instructions require you to have CF templates available in a S3 bucket. This can be manually performed or mananged via CI/CD --see [SaU2DevOps README.md](https://github.com/swmcode/SaUDevOps/blob/master/README.md)
+The following instructions require you to have CF templates available in a S3 bucket. This can be manually performed or managed via CI/CD --see [SaU2DevOps README.md](https://github.com/swmcode/SaUDevOps/blob/master/README.md)
 
 <img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/aws-s3-bucket-cf-templates.jpg' width='50%' />
 
@@ -76,12 +76,30 @@ Go to [AWS CloudFormation](https://console.aws.amazon.com/cloudformation/home) a
 
 <img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/aws-cf-createstack.jpg' width='50%' />
 
-then click "Next". You will see a list of input parameters. Fill them in with the appropriate values, including the ARNs for cert and secret key. Click "Next" for remaining steps, check acknowledgements and run stack creation. You Can watch progress of stack creation, watch for errors (should result in rollback) and completion.
+then click "Next". You will see a list of input parameters. Fill them in with the appropriate values, including the ARNs for cert and secret key. Click "Next" for remaining steps, check acknowledgements and run stack creation.
+
+You can watch progress of stack creation and completion --hopefully you don't see any errors (which should result in rollback) .
 
 <img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/aws-cf-createstack-progress.jpg' width='50%' />
 
 <img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/aws-cf-createstack-complete.jpg' width='50%' />
 
-## 7. Validate CI/CD Process
+## 7. Validate Stack Creation
 
-Feel free to modify your local copy of the application in SaUClient and SaUServer repositories' targeted branches. Do a `git commit` and `git push` to push your changes up to Github. CodePipeline will pick up the changes and rereun the pipeline to rebuild the application and roll out your updates with zero downtime.
+After successful completion of stack creation you will be able to browse to running application using following pattern https://[EnvironmentName].[HostZoneName] so if you passed the following `EnvironmentName=qa` and `HostZoneName=submitanupdate.com` then your URL would be `https://qa.submitanupdate.com`
+
+You can also validate CI/CD by modifying application in SaUClient and SaUServer repositories' for targeted branches (branch names passed as parameters for stack creation). Do a `git commit` and `git push` to push your changes up to Github. CodePipeline will pick up the changes and rereun the pipeline to rebuild the application and roll out your updates with zero downtime.
+
+## Troubleshooting
+
+When troubleshooting, remember to make sure correct region is selected.
+
+If Stack creation fails start with reviewing creation events and review any error/failed statuses
+
+<img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/aws-cf-createstack-error.jpg' width='50%' />
+
+If Stack creation succeeded but application can't be browsed to or your can't log-in or perform other actions you will want to start by reviewing [code pipelines](https://console.aws.amazon.com/codesuite/codepipeline/pipelines?region=us-east-1) for any failures/errors, if none found you will want to look at individual services and their associated logs -
+
+[S3](https://s3.console.aws.amazon.com/s3/home?region=us-east-1) for React Client hosting
+
+[ECS](https://console.aws.amazon.com/ecs/home?region=us-east-1#/clusters) for Rest API
