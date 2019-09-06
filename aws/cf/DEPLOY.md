@@ -47,14 +47,14 @@ Go to your [Github settings to generate a new token](https://github.com/settings
 
 These two permissions will allow AWS CodePipeline to monitor the Github repo for changes, and react to updates by redeploying the application.
 
-## 4. Create Secret for Environment Var JSON Object (String)
+## 4. Create Secret for JSON Object (String) containing Environment Variables
 
 These instructions are for the fullstack deployment using template
 [sau2-fullstack-cd-aws-cf.yml](https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/templates/sau2-fullstack-cd-aws-cf.yml) this template takes a parameter `EnvSecretArn` which is the ARN for a AWS Secret Manager Key whose value is a JSON object String containing key:Value pairs for all required and optional environment vars, including sensitive data.
 
 Further documentation about SaU2Server Environment Variables can be found in [SaU2Server repo README.md](https://github.com/swmcode/SaUServer/blob/develop/README.md)
 
-Got to [AWS Secrets Manager](https://us-east-1.console.aws.amazon.com/secretsmanager/home?region=us-east-1#/listSecrets) for selected/desired region. Click "Store a new secret"
+Go to [AWS Secrets Manager](https://us-east-1.console.aws.amazon.com/secretsmanager/home?region=us-east-1#/listSecrets) for selected/desired region. Click "Store a new secret"
 
 Select "Other type of secrets" for secret type and under plaintext view enter/paste environment var JSON object string
 
