@@ -47,6 +47,41 @@ Go to your [Github settings to generate a new token](https://github.com/settings
 
 These two permissions will allow AWS CodePipeline to monitor the Github repo for changes, and react to updates by redeploying the application.
 
-## 4. Deploy SuA2 Application Fullstack on your account
+## 4. Create Secert for Environment Var JSON Object (String)
 
-Go to [AWS CloudFormation](https://console.aws.amazon.com/cloudformation/home) and click the "Create Stack" button. In the following dialog click "Specify template" and select the `sau2-fullstack-cd-aws-cf.yml` file you located, then click "Next". You will see a list of input parameters. Fill them in with the appropriate values:
+These instructions are for the fullstack deployment using template
+[sau2-fullstack-cd-aws-cf.yml](https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/templates/sau2-fullstack-cd-aws-cf.yml) these templates takes a parameter `EnvSecretArn` which is the ARN for a AWS Secret Manager Key whose value is a JSON object String containing key:Value pairs for all required and optional environment vars, including sensitive data.
+
+Futher documentation about SaU2Server Environment Variables can be found in [SaU2Server repo README.md](https://github.com/swmcode/SaUServer/blob/develop/README.md)
+
+Got to [AWS Secrets Manager](https://us-east-1.console.aws.amazon.com/secretsmanager/home?region=us-east-1#/listSecrets) for selected/desired region. Click "Store a new secret"
+
+Select "Other type of secrets" for secret type and under plaintext view enter/paste environment var JSON object string
+
+<img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/aws-secret-manager-env-vars.jpg' width='50%' />
+
+Complete the entry steps to create key (see following screen shot for meaningful suggestion on name, description and tags), then copy ARN for use when running fullstack formation.
+
+<img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/aws-secret-manager-env-vars-key.jpg' width='50%' />
+
+## 5. Deploy SuA2 Application Fullstack on your account
+
+The following instructions require you to have CF templates available in a S3 bucket. This can be manually performed or mananged via CI/CD --see [SaU2DevOps README.md](https://github.com/swmcode/SaUDevOps/blob/master/README.md)
+
+<img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/aws-s3-bucket-cf-templates.jpg' width='50%' />
+
+Go to [AWS CloudFormation](https://console.aws.amazon.com/cloudformation/home) and click the "Create Stack" button. In the following dialog select "Template is ready" and "Amazon S3 URL" then enter AWS S3 URL for template `sau2-fullstack-cd-aws-cf.yml`
+
+<img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/aws-cf-fullstack-template-s3-url.jpg' width='50%' />
+
+<img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/aws-cf-createstack.jpg' width='50%' />
+
+then click "Next". You will see a list of input parameters. Fill them in with the appropriate values, including the ARNs for cert and secret key. Click "Next" for remaining steps, check acknowledgements and run stack creation. You Can watch progress of stack creation, watch for errors (should result in rollback) and completion.
+
+<img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/aws-cf-createstack-progress.jpg' width='50%' />
+
+<img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/aws-cf-createstack-complete.jpg' width='50%' />
+
+## 7. Validate CI/CD Process
+
+Feel free to modify your local copy of the application in SaUClient and SaUServer repositories' targeted branches. Do a `git commit` and `git push` to push your changes up to Github. CodePipeline will pick up the changes and rereun the pipeline to rebuild the application and roll out your updates with zero downtime.
