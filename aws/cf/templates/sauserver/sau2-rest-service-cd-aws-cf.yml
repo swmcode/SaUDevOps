@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: The baseline resources used to create a Fargate environment to launch containerized applications in.
+Description: Creates CI/CD CodePipeline for building SaUServer Container Image and deploying to ECS with Fargate
 Parameters:
     GitHubRepo:
         Type: String

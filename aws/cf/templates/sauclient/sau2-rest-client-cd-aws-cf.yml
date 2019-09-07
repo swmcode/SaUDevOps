@@ -1,4 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
+Description: Create CI/CD CodePipeline for building SaUClient and deploying 
 Parameters: 
   GitHubOwner:
     Type: String
