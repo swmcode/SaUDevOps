@@ -2,7 +2,7 @@
 
 The guide walks you through the process of deploying a production grade instance of SaU2 application software on a AWS account. The deployed application will have:
 
--   [Single CloudFront distribution](https://aws.amazon.com/blogs/networking-and-content-delivery/dynamic-whole-site-delivery-with-amazon-cloudfront/) for hosting/serving both React Client (static content) and REST API (dynamic content)
+-   [Single CloudFront distribution](https://aws.amazon.com/blogs/networking-and-content-delivery/dynamic-whole-site-delivery-with-amazon-cloudfront/) for serving both React Client (static content) and REST API (dynamic content)
     -   Scalability and performance
     -   Negate CORS
     -   SSL Termination
@@ -31,7 +31,7 @@ Then add the list of domains that should be covered by the SSL certificate --the
 
 <img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/cert-domain-list.jpg' width='50%' />
 
-This allows for serving HTTPS traffic on https://submitanupdate2.com and https://www.submitanupdate2.comas as well as on any other subdomains (e.g., https://dev1.submitanupdate2.com )
+This allows for serving HTTPS traffic on https://submitanupdate2.com and https://www.submitanupdate2.com as well as on any other subdomains (e.g., https://dev1.submitanupdate2.com )
 ACM can take care of automatically validating the certificate for you if you are also hosting the domain on Route 53. After a few mins I am able to view the details of the created certificate and get the certificate ARN (Amazon Resource Name):
 
 <img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/ssl-cert-manager-cert-arn.jpg' width='50%' />

@@ -1,4 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
+Description: CloudFront Distribution for mapping of alias (subdomain), binding of SSL/TLS cert and creation of client and server origins
 Parameters:
     Subdomain:
         Type: String
@@ -26,9 +27,6 @@ Parameters:
         Description: 'ARN of the Amazon Certificate Manager SSL certificate to use for this app'
 
 Resources:
-    # CloudFront Distribution for mapping of alias and creation of origins -
-    # S3 hosted static assests (React Client)
-    # Application Loadbalancer fronting the Fargate deployment REST API
     Distribution:
         Type: 'AWS::CloudFront::Distribution'
         Properties:
@@ -39,11 +37,13 @@ Resources:
                 Aliases:
                     - !Sub '${Subdomain}.${HostZoneName}'
                 Origins:
+                    # S3 hosted static assests (React Client)
                     - DomainName: !Ref ClientDomainName
                       Id: !Ref ClientOriginID
                       OriginPath: !Sub '/${EnvironmentName}'
                       S3OriginConfig:
                           OriginAccessIdentity: ''
+                    # Application Loadbalancer fronting the Fargate deployment REST API
                     - DomainName: !Ref ServerDomainName
                       Id: !Ref ServerOriginID
                       CustomOriginConfig:

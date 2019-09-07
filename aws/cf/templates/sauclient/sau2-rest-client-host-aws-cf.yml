@@ -1,7 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
-
+Description: S3 bucket for web servering React app (static files)
 Resources:
-    # s3 bucket for web servering React app (static files)
     Sau2ReactClientBucket:
         Type: 'AWS::S3::Bucket'
         Properties:

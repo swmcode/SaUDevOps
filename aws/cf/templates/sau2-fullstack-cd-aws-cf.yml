@@ -1,4 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
+Description: Master/Parent template which calls all other (nested) templates needed to fully deploy SaU2 application stack
 Parameters:
     GitHubOwner:
         Type: String
@@ -17,7 +18,7 @@ Parameters:
         Default: develop
     GitHubOAuthToken:
         Type: String
-        Description: 'GitHub personal access token'
+        Description: 'GitHub personal access token, needed to create Webhook'
         NoEcho: true
     GitHubSecret:
         Type: String
@@ -31,7 +32,7 @@ Parameters:
         Description: ARN of the Amazon Certificate Manager SSL certificate to use for this app
     EnvSecretArn:
         Type: String
-        Description: ARN of the AWS Secrets Manager secert for environments' vars
+        Description: ARN of the AWS Secrets Manager key for environment vars JSON object string
     HostZoneName:
         Type: String
         Description: 'Route53 Hosted Zone Name'

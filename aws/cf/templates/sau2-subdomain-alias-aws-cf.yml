@@ -1,4 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
+Description: Creation of target environment's sub domain alias records (both IPv4 and IPv6) for configured host
 Parameters:
     Subdomain:
         Type: String
@@ -13,7 +14,6 @@ Parameters:
         Type: String
 
 Resources:
-    # creation of target environment sub domain alias record for configured host
     SaU2DNS:
         Type: AWS::Route53::RecordSetGroup
         Properties:
