@@ -6,7 +6,8 @@ Resources:
         Type: 'AWS::S3::Bucket'
         Properties:
             WebsiteConfiguration:
-                #not sure we want to obscure errors for user
+                # the client is a React Single Page App (uses client side routing)
+                # we always server index.html and client handles for "resource not found" and such
                 ErrorDocument: index.html
                 IndexDocument: index.html
 

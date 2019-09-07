@@ -237,7 +237,8 @@ Resources:
                             - Name: BuildOutput
                         RunOrder: 1
 
-                # Finally we deploy the Fargate service to the cluster
+                # Finally we deploy the Fargate service to the cluster using CF template kept in
+                # SaUServer Repo
                 - Name: Deploy
                   Actions:
                       - Name: Deploy
@@ -254,6 +255,7 @@ Resources:
                             Capabilities: CAPABILITY_IAM
                             ParameterOverrides: !Sub |
                                 {
+                                  "ServiceName": "${EnvironmentName}-Sau2Service",
                                   "EnvironmentName": "${EnvironmentName}",
                                   "EnvSecretArn": "${EnvSecretArn}",
                                   "ImageUrl": {

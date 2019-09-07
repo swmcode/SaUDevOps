@@ -36,16 +36,32 @@ Parameters:
         Type: String
         Description: 'Route53 Hosted Zone Name'
         Default: submitanupdate2.com
+    TemplateS3Bucket:
+        Type: String
+        Description: Root URL for S3 Bucket where nested CF templates can be found
+        Default: https://sau-devops.s3.amazonaws.com
 
 Conditions:
     # determines if passed target environment is 'prod'
     IsProd: !Equals [!Ref EnvironmentName, 'prod']
 
+# Some of the Nested Stacks/Templates have dependecies on each other, consequently their order below
+# is important.
+#
+# Before you edit this or other templates, please make sure you understand how CloudFormation works
+# as well as what the individual stacks/templates are doing
 Resources:
     SaUServerResources:
         Type: AWS::CloudFormation::Stack
         Properties:
-            TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-rest-service-cluster-aws-cf.yml'
+            TemplateURL:
+                !Join [
+                    '/',
+                    [
+                        !Ref TemplateS3Bucket,
+                        'sau2-rest-service-cluster-aws-cf.yml',
+                    ],
+                ]
             Parameters:
                 EnvironmentName: !Ref EnvironmentName
                 CertificateArn: !Ref CertificateArn
@@ -54,7 +70,11 @@ Resources:
     SaUServerCD:
         Type: AWS::CloudFormation::Stack
         Properties:
-            TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-rest-service-cd-aws-cf.yml'
+            TemplateURL:
+                !Join [
+                    '/',
+                    [!Ref TemplateS3Bucket, 'sau2-rest-service-cd-aws-cf.yml'],
+                ]
             Parameters:
                 GitHubOwner: !Ref GitHubOwner
                 GitHubRepo: !Ref GitHubServerRepo
@@ -70,12 +90,20 @@ Resources:
     SaUClientHost:
         Type: AWS::CloudFormation::Stack
         Properties:
-            TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-rest-client-host-aws-cf.yml'
+            TemplateURL:
+                !Join [
+                    '/',
+                    [!Ref TemplateS3Bucket, 'sau2-rest-client-host-aws-cf.yml'],
+                ]
 
     SaUDistribution:
         Type: AWS::CloudFormation::Stack
         Properties:
-            TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-distribution-aws-cf.yml'
+            TemplateURL:
+                !Join [
+                    '/',
+                    [!Ref TemplateS3Bucket, 'sau2-distribution-aws-cf.yml'],
+                ]
             Parameters:
                 Subdomain: !Sub
                     - '${SubDomain}'
@@ -91,7 +119,11 @@ Resources:
     SaUClientCD:
         Type: AWS::CloudFormation::Stack
         Properties:
-            TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-rest-client-cd-aws-cf.yml'
+            TemplateURL:
+                !Join [
+                    '/',
+                    [!Ref TemplateS3Bucket, 'sau2-rest-client-cd-aws-cf.yml'],
+                ]
             Parameters:
                 GitHubOwner: !Ref GitHubOwner
                 GitHubRepo: !Ref GitHubClientRepo
@@ -106,7 +138,11 @@ Resources:
     SaUAliasClient:
         Type: AWS::CloudFormation::Stack
         Properties:
-            TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-subdomain-alias-aws-cf.yml'
+            TemplateURL:
+                !Join [
+                    '/',
+                    [!Ref TemplateS3Bucket, 'sau2-subdomain-alias-aws-cf.yml'],
+                ]
             Parameters:
                 Subdomain: !Sub
                     - '${SubDomain}'
@@ -118,7 +154,11 @@ Resources:
     SaUAliasServer:
         Type: AWS::CloudFormation::Stack
         Properties:
-            TemplateURL: 'https://sau-devops.s3.amazonaws.com/sau2-subdomain-alias-aws-cf.yml'
+            TemplateURL:
+                !Join [
+                    '/',
+                    [!Ref TemplateS3Bucket, 'sau2-subdomain-alias-aws-cf.yml'],
+                ]
             Parameters:
                 Subdomain: !Sub '${EnvironmentName}-api'
                 TargetDNSName: !GetAtt SaUServerResources.Outputs.PublicLoadBalancerDnsName

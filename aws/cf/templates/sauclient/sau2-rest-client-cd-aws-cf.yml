@@ -29,7 +29,7 @@ Parameters:
     Type: String
 
 Resources:
-  # read/pull source, build and deploy artifact
+  # read/pull source, build and deploy artifact (React Client)
   CodePipeline:
     Type: 'AWS::CodePipeline::Pipeline'
     Properties:
@@ -78,7 +78,7 @@ Resources:
               Configuration:
                 ProjectName: !Ref CodeBuild
   # codebuild role for reading source, writing logs, creating cloudfront invalidation 
-  # and writing built artifact to s3 bucket, 
+  # and writing built artifact to s3 bucket  
   CodeBuildRole:
     Type: AWS::IAM::Role
     Properties:
