@@ -216,6 +216,8 @@ Resources:
             install:
               runtime-versions:
                 nodejs: 10
+            # we set CI=true to run test once and set to fail on linter warnings during build
+            # https://create-react-app.dev/docs/running-tests#continuous-integration
             pre_build:
               commands:
                 - echo Installing source NPM dependencies...
@@ -224,7 +226,7 @@ Resources:
             build:
               commands:
                 - echo Build started on `date`
-                - npm run build
+                - CI=true npm run build
             post_build:
               commands:
                 # provide public read access to root
