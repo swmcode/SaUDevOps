@@ -88,6 +88,23 @@ Resources:
                 HostZoneName: !Ref HostZoneName
                 CloudFormationDeployRoleArn: !GetAtt SaUServerResources.Outputs.CloudFormationDeployRoleArn
 
+    SaUAliasServer:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL:
+                !Join [
+                    '/',
+                    [!Ref TemplateS3Bucket, 'sau2-subdomain-alias-aws-cf.yml'],
+                ]
+            Parameters:
+                Subdomain: !Sub
+                    - '${ApiSubDomain}${ApiSubDomainSuffix}'
+                    - ApiSubDomain: !If [IsProd, '', !Ref EnvironmentName]
+                    - ApiSubDomainSuffix: !If [IsProd, 'api', '-api']
+                TargetDNSName: !GetAtt SaUServerResources.Outputs.PublicLoadBalancerDnsName
+                HostZoneName: !Ref HostZoneName
+                HostedZoneId: Z35SXDOTRQ7X7K
+
     SaUClientHost:
         Type: AWS::CloudFormation::Stack
         Properties:
@@ -110,10 +127,13 @@ Resources:
                     - '${SubDomain}'
                     - { SubDomain: !If [IsProd, 'www', !Ref EnvironmentName] }
                 EnvironmentName: !Ref EnvironmentName
-                ClientOriginID: !GetAtt SaUClientHost.Outputs.Sau2ReactClientBucketArn
+                ClientOriginID: 'SaUClient'
                 ClientDomainName: !GetAtt SaUClientHost.Outputs.Sau2ReactClientBucketDomainName
-                ServerOriginID: !GetAtt SaUServerResources.Outputs.PublicLoadBalancerDnsName
-                ServerDomainName: !GetAtt SaUServerResources.Outputs.PublicLoadBalancerDnsName
+                ServerOriginID: 'SaUServer'
+                ServerDomainName: !Sub
+                    - '${ApiSubDomain}${ApiSubDomainSuffix}.${HostZoneName}'
+                    - ApiSubDomain: !If [IsProd, '', !Ref EnvironmentName]
+                    - ApiSubDomainSuffix: !If [IsProd, 'api', '-api']
                 HostZoneName: !Ref HostZoneName
                 CertificateArn: !Ref CertificateArn
 
@@ -151,17 +171,3 @@ Resources:
                 TargetDNSName: !GetAtt SaUDistribution.Outputs.SauDistributionDomainName
                 HostZoneName: !Ref HostZoneName
                 HostedZoneId: Z2FDTNDATAQYW2
-
-    SaUAliasServer:
-        Type: AWS::CloudFormation::Stack
-        Properties:
-            TemplateURL:
-                !Join [
-                    '/',
-                    [!Ref TemplateS3Bucket, 'sau2-subdomain-alias-aws-cf.yml'],
-                ]
-            Parameters:
-                Subdomain: !Sub '${EnvironmentName}-api'
-                TargetDNSName: !GetAtt SaUServerResources.Outputs.PublicLoadBalancerDnsName
-                HostZoneName: !Ref HostZoneName
-                HostedZoneId: Z35SXDOTRQ7X7K
