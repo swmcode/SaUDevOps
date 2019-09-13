@@ -100,7 +100,7 @@ Resources:
                 Subdomain: !Sub
                     - '${ApiSubDomain}${ApiSubDomainSuffix}'
                     - ApiSubDomain: !If [IsProd, '', !Ref EnvironmentName]
-                    - ApiSubDomainSuffix: !If [IsProd, 'api', '-api']
+                      ApiSubDomainSuffix: !If [IsProd, 'api', '-api']
                 TargetDNSName: !GetAtt SaUServerResources.Outputs.PublicLoadBalancerDnsName
                 HostZoneName: !Ref HostZoneName
                 HostedZoneId: Z35SXDOTRQ7X7K
@@ -133,7 +133,7 @@ Resources:
                 ServerDomainName: !Sub
                     - '${ApiSubDomain}${ApiSubDomainSuffix}.${HostZoneName}'
                     - ApiSubDomain: !If [IsProd, '', !Ref EnvironmentName]
-                    - ApiSubDomainSuffix: !If [IsProd, 'api', '-api']
+                      ApiSubDomainSuffix: !If [IsProd, 'api', '-api']
                 HostZoneName: !Ref HostZoneName
                 CertificateArn: !Ref CertificateArn
 
