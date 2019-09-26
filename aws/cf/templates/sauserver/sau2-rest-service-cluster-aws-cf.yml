@@ -180,9 +180,16 @@ Resources:
         DependsOn:
             - PublicLoadBalancer
         Properties:
+            # all traffic on HTTP redirected to HTTPS
             DefaultActions:
-                - TargetGroupArn: !Ref 'DummyTargetGroupPublic'
-                  Type: 'forward'
+                - RedirectConfig:
+                      Host: '#{host}'
+                      Path: '/#{path}'
+                      Port: '443'
+                      Protocol: 'HTTPS'
+                      Query: '#{query}'
+                      StatusCode: 'HTTP_301'
+                  Type: 'redirect'
             LoadBalancerArn: !Ref 'PublicLoadBalancer'
             Port: 80
             Protocol: HTTP
@@ -347,7 +354,7 @@ Outputs:
             Name: !Join [':', [!Ref 'EnvironmentName', 'ClusterName']]
     ExternalUrl:
         Description: The url of the external load balancer
-        Value: !Join ['', ['http://', !GetAtt 'PublicLoadBalancer.DNSName']]
+        Value: !Join ['', ['https://', !GetAtt 'PublicLoadBalancer.DNSName']]
         Export:
             Name: !Join [':', [!Ref 'EnvironmentName', 'ExternalUrl']]
     PublicLoadBalancerDnsName:

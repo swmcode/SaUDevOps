@@ -24,6 +24,6 @@ As of 09/07/2019, tickets exists for building out automated integration and func
 
 ### CloudFormation (CF) Template CI
 
-A CodePipeline should/could be built out using CF that will integrate with GitHub using Webhook, and would pull updated CF templates on GitHub Push and execute fullstack template and then run integration and functional tests and then delete/remove stack.
+A CodePipeline should/could be built out using CF that will integrate with GitHub using Webhook, and would pull updated CF templates on GitHub Push and execute fullstack template, then run integration and functional tests and then delete/remove stack.
 
 As of 09/07/2019 there is a ticket for this work.
