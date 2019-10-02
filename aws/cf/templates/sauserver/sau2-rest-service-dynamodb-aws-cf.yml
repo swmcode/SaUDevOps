@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Creates DynamoDB table and role for SaU2Service
+Parameters:
+    EnvironmentName:
+        Type: String
+        Description: 'e.g., qa, dev, prod (prod=www (subdomain))'
+    RequestReadCapacityUnits:
+        Description: 'Provisioned throughput for reads on Request Table'
+        Type: Number
+        Default: 10
+    RequestWriteCapacityUnits:
+        Description: 'Provisioned throughput for writes on Request Table'
+        Type: Number
+        Default: 10
+    RequestGsReadCapacityUnits:
+        Description: 'Provisioned throughput for reads on Request Table GS'
+        Type: Number
+        Default: 10
+    RequestGsWriteCapacityUnits:
+        Description: 'Provisioned throughput for writes on Request Table GS'
+        Type: Number
+        Default: 10
+
+Resources:
+    # Table for storing SaU2 Service data
+    RequestTable:
+        Type: AWS::DynamoDB::Table
+        Properties:
+            TableName: !Join ['_', [!Ref 'EnvironmentName', 'Requests']]
+            AttributeDefinitions:
+                - AttributeName: _id
+                  AttributeType: S
+                - AttributeName: sk
+                  AttributeType: S
+                - AttributeName: skValue
+                  AttributeType: S
+            KeySchema:
+                - AttributeName: _id
+                  KeyType: HASH
+            ProvisionedThroughput:
+                ReadCapacityUnits: !Ref RequestReadCapacityUnits
+                WriteCapacityUnits: !Ref RequestWriteCapacityUnits
+            GlobalSecondaryIndexes:
+                - IndexName: !Join ['_', [!Ref 'EnvironmentName', 'Overload']]
+                  KeySchema:
+                      - AttributeName: sk
+                        KeyType: HASH
+                      - AttributeName: skValue
+                        KeyType: RANGE
+                  Projection:
+                      ProjectionType: ALL
+                  ProvisionedThroughput:
+                      ReadCapacityUnits: !Ref RequestGsReadCapacityUnits
+                      WriteCapacityUnits: !Ref RequestGsWriteCapacityUnits
+    # A role for the service so it can access the tables
+    SaU2ServiceRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service: 'ecs-tasks.amazonaws.com'
+                      Action: ['sts:AssumeRole']
+            Path: /
+            Policies:
+                - PolicyName: sau2-dynamodb-table
+                  PolicyDocument:
+                      Statement:
+                          - Effect: Allow
+                            Action:
+                                - 'dynamodb:PutItem'
+                                - 'dynamodb:GetItem'
+                                - 'dynamodb:Query'
+                                - 'dynamodb:Scan'
+                                - 'dynamodb:UpdateItem'
+                                - 'dynamodb:DeleteItem'
+                            Resource:
+                                - !Join [
+                                      '',
+                                      [
+                                          'arn:aws:dynamodb:*:*:table/',
+                                          !Ref 'RequestTable',
+                                      ],
+                                  ]
+
+Outputs:
+    SaU2ServiceRole:
+        Description: The role of the SaU2 service
+        Value: !GetAtt 'SaU2ServiceRole.Arn'
+        Export:
+            Name: !Join [':', [!Ref 'EnvironmentName', 'SaU2ServiceRole']]
