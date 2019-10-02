@@ -84,12 +84,12 @@ Resources:
                                           !Ref 'RequestTable',
                                       ],
                                   ]
-                                  - !Join [
+                                - !Join [
                                       '',
                                       [
                                           'arn:aws:dynamodb:*:*:table/',
                                           !Ref 'RequestTable',
-                                          '/index/*'
+                                          '/index/*',
                                       ],
                                   ]
 
