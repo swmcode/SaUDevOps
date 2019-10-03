@@ -22,7 +22,7 @@ Parameters:
         NoEcho: true
     GitHubSecret:
         Type: String
-        Description: 'GitHub Webhook Secert'
+        Description: GitHub Webhook Secert - https://developer.github.com/webhooks/creating/#secret
         NoEcho: true
     EnvironmentName:
         Type: String
