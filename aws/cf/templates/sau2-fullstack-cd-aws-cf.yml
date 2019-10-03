@@ -68,6 +68,34 @@ Resources:
                 CertificateArn: !Ref CertificateArn
                 EnvSecretArn: !Ref EnvSecretArn
 
+    SaUDynamoDB:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL:
+                !Join [
+                    '/',
+                    [
+                        !Ref TemplateS3Bucket,
+                        'sau2-rest-service-dynamodb-aws-cf.yml',
+                    ],
+                ]
+            Parameters:
+                EnvironmentName: !Ref EnvironmentName
+
+    SaUFileBucket:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL:
+                !Join [
+                    '/',
+                    [
+                        !Ref TemplateS3Bucket,
+                        'sau2-rest-service-file-buckets-aws-cf.yml',
+                    ],
+                ]
+            Parameters:
+                EnvironmentName: !Ref EnvironmentName
+
     SaUServerCD:
         Type: AWS::CloudFormation::Stack
         Properties:
