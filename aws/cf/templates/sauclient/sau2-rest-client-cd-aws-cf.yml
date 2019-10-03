@@ -34,7 +34,6 @@ Resources:
   CodePipeline:
     Type: 'AWS::CodePipeline::Pipeline'
     Properties:
-      Name: !Ref EnvironmentName
       RoleArn: !GetAtt CodePipeLineRole.Arn
       ArtifactStore:
         Location: !Ref Sau2ReactClientBuildPipelineBucket
