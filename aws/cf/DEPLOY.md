@@ -23,7 +23,16 @@ Once your domain is purchased and processed you'll see it show up on [your list 
 
 ## 2. Register an SSL certificate for the domain
 
-Now go to [Amazon Certificate Manager](https://console.aws.amazon.com/acm/home) to get a free SSL certificate for the domain. Click the "Request a certificate" button.
+Please besure you under stand the following requirements for [importing into AWS Certificate Manager (ACM)](https://docs.aws.amazon.com/acm/latest/userguide/import-certificate-prerequisites.html), or for [association with a distribution](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html):
+
+-   The certificate must be imported in the US East (N. Virginia) Region.
+-   The certificate must be 2048 bits or smaller.
+-   The certificate must not be password protected.
+-   The certificate must be PEM encoded.
+
+To associate the imported certificate and certificate chain to your CloudFront distribution, you must be sure that they meet these requirements. Or, you can [request a public certificate from ACM](https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-request-public.html) in the US East (N. Virginia) Region to meet the requirements. Then, you can associate the newly requested certificate with your distribution. This information was found in [AWS Support Article](https://aws.amazon.com/premiumsupport/knowledge-center/cloudfront-invalid-viewer-certificate/)
+
+Go to [Amazon Certificate Manager](https://console.aws.amazon.com/acm/home) to get a free SSL certificate for the domain. Click the "Request a certificate" button.
 
 Then select a "public certificate" because this is the certificate public web browsers will use for communicating securely with SaU application.
 
@@ -94,9 +103,17 @@ You can also validate CI/CD by modifying application in SaUClient and SaUServer 
 
 When troubleshooting, remember to make sure correct region is selected.
 
-If Stack creation fails start with reviewing creation events and review any error/failed statuses
+If Stack creation fails, start with reviewing creation events and review any error/failed statuses.
 
 <img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/aws-cf-createstack-error.jpg' width='50%' />
+
+Besure to review failures and events for individual nested stacks as well as master stack.
+
+<img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/aws-cf-createstack-error-message.jpg' width='50%' />
+
+<img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/aws-cf-createstack-error-resources.jpg' width='50%' />
+
+<img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/aws-cf-createstack-error-resources-events.jpg' width='50%' />
 
 If Stack creation succeeded but application can't be browsed to or your can't log-in or perform other actions you will want to start by reviewing [code pipelines](https://console.aws.amazon.com/codesuite/codepipeline/pipelines?region=us-east-1) for any failures/errors, if none found you will want to look at individual services and their associated logs -
 
