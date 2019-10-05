@@ -109,8 +109,6 @@ If Stack creation fails, start with reviewing creation events and review any err
 
 Besure to review failures and events for individual nested stacks as well as master stack.
 
-<img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/aws-cf-createstack-error-message.jpg' width='50%' />
-
 <img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/aws-cf-createstack-error-resources.jpg' width='50%' />
 
 <img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/aws-cf-createstack-error-resources-events.jpg' width='50%' />
