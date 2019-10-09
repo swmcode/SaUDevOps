@@ -52,50 +52,10 @@ Resources:
                   ProvisionedThroughput:
                       ReadCapacityUnits: !Ref RequestGsReadCapacityUnits
                       WriteCapacityUnits: !Ref RequestGsWriteCapacityUnits
-    # A role for the service so it can access the tables
-    SaU2ServiceRole:
-        Type: AWS::IAM::Role
-        Properties:
-            AssumeRolePolicyDocument:
-                Statement:
-                    - Effect: Allow
-                      Principal:
-                          Service: 'ecs-tasks.amazonaws.com'
-                      Action: ['sts:AssumeRole']
-            Path: /
-            Policies:
-                - PolicyName: sau2-dynamodb-table
-                  PolicyDocument:
-                      Statement:
-                          - Effect: Allow
-                            Action:
-                                - 'dynamodb:PutItem'
-                                - 'dynamodb:GetItem'
-                                - 'dynamodb:Query'
-                                - 'dynamodb:Scan'
-                                - 'dynamodb:UpdateItem'
-                                - 'dynamodb:DeleteItem'
-                                - 'dynamodb:DescribeTable'
-                            Resource:
-                                - !Join [
-                                      '',
-                                      [
-                                          'arn:aws:dynamodb:*:*:table/',
-                                          !Ref 'RequestTable',
-                                      ],
-                                  ]
-                                - !Join [
-                                      '',
-                                      [
-                                          'arn:aws:dynamodb:*:*:table/',
-                                          !Ref 'RequestTable',
-                                          '/index/*',
-                                      ],
-                                  ]
 
 Outputs:
-    SaU2ServiceRole:
-        Description: The role of the SaU2 service
-        Value: !GetAtt 'SaU2ServiceRole.Arn'
+    RequestTable:
+        Description: The ARN for DynamoDB Request Table
+        Value: !GetAtt 'RequestTable.Arn'
         Export:
-            Name: !Join [':', [!Ref 'EnvironmentName', 'SaU2ServiceRole']]
+            Name: !Join [':', [!Ref 'EnvironmentName', 'RequestTable']]
