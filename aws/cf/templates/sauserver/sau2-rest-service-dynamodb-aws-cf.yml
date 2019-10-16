@@ -22,6 +22,10 @@ Parameters:
         Default: 10
 
 Resources:
+    Sau2RequestFilesBucket:
+        Type: 'AWS::S3::Bucket'
+        Properties: {}
+
     # Table for storing SaU2 Service data
     RequestTable:
         Type: AWS::DynamoDB::Table
@@ -92,6 +96,23 @@ Resources:
                                           '/index/*',
                                       ],
                                   ]
+                          - Effect: Allow
+                            Action:
+                                - 's3:GetObject'
+                                - 's3:GetObjectVersion'
+                                - 's3:GetBucketVersioning'
+                                - 's3:PutObject'
+                                - 's3:DeleteObject'
+                                - 's3:ListBucket'
+                            Resource:
+                                - !GetAtt Sau2RequestFilesBucket.Arn
+                                - !Join [
+                                      '',
+                                      [
+                                          !GetAtt Sau2RequestFilesBucket.Arn,
+                                          '/*',
+                                      ],
+                                  ]
 
 Outputs:
     SaU2ServiceRole:
@@ -99,3 +120,13 @@ Outputs:
         Value: !GetAtt 'SaU2ServiceRole.Arn'
         Export:
             Name: !Join [':', [!Ref 'EnvironmentName', 'SaU2ServiceRole']]
+
+    Sau2RequestFilesBucket:
+        Value: !Ref Sau2RequestFilesBucket
+        Export:
+            Name:
+                !Join [':', [!Ref 'EnvironmentName', 'Sau2RequestFilesBucket']]
+
+    Sau2RequestFilesBucketArn:
+        Description: Sau2RequestFilesBucket ARN for sau environment artifact
+        Value: !GetAtt Sau2RequestFilesBucket.Arn
