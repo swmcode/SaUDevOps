@@ -371,10 +371,10 @@ Resources:
                                 - 's3:DeleteObject'
                                 - 's3:ListBucket'
                             Resource:
-                                - !GetAtt Sau2RequestFilesBucketArn
+                                - !Ref Sau2RequestFilesBucketArn
                                 - !Join [
                                       '',
-                                      [!GetAtt Sau2RequestFilesBucketArn, '/*'],
+                                      [!Ref Sau2RequestFilesBucketArn, '/*'],
                                   ]
 
                           - Effect: Allow
