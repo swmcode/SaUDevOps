@@ -52,34 +52,6 @@ Conditions:
 # Before you edit this or other templates, please make sure you understand how CloudFormation works
 # as well as what the individual stacks/templates are doing
 Resources:
-    SaUFileBucket:
-        Type: AWS::CloudFormation::Stack
-        Properties:
-            TemplateURL:
-                !Join [
-                    '/',
-                    [
-                        !Ref TemplateS3Bucket,
-                        'sau2-rest-service-file-buckets-aws-cf.yml',
-                    ],
-                ]
-            Parameters:
-                EnvironmentName: !Ref EnvironmentName
-
-    SaUDynamoDB:
-        Type: AWS::CloudFormation::Stack
-        Properties:
-            TemplateURL:
-                !Join [
-                    '/',
-                    [
-                        !Ref TemplateS3Bucket,
-                        'sau2-rest-service-dynamodb-aws-cf.yml',
-                    ],
-                ]
-            Parameters:
-                EnvironmentName: !Ref EnvironmentName
-
     SaUServerResources:
         Type: AWS::CloudFormation::Stack
         Properties:
@@ -95,8 +67,34 @@ Resources:
                 EnvironmentName: !Ref EnvironmentName
                 CertificateArn: !Ref CertificateArn
                 EnvSecretArn: !Ref EnvSecretArn
-                RequestTableDynamoDbArn: !GetAtt SaUDynamoDB.Outputs.RequestTable
-                Sau2RequestFilesBucketArn: !GetAtt SaUFileBucket.Outputs.Sau2RequestFilesBucketArn
+
+    SaUDynamoDB:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL:
+                !Join [
+                    '/',
+                    [
+                        !Ref TemplateS3Bucket,
+                        'sau2-rest-service-dynamodb-aws-cf.yml',
+                    ],
+                ]
+            Parameters:
+                EnvironmentName: !Ref EnvironmentName
+
+    SaUFileBucket:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL:
+                !Join [
+                    '/',
+                    [
+                        !Ref TemplateS3Bucket,
+                        'sau2-rest-service-file-buckets-aws-cf.yml',
+                    ],
+                ]
+            Parameters:
+                EnvironmentName: !Ref EnvironmentName
 
     SaUServerCD:
         Type: AWS::CloudFormation::Stack

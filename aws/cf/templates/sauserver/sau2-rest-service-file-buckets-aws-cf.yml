@@ -19,9 +19,3 @@ Outputs:
     Sau2RequestFilesBucketArn:
         Description: Sau2RequestFilesBucket ARN for sau environment artifact
         Value: !GetAtt Sau2RequestFilesBucket.Arn
-        Export:
-            Name:
-                !Join [
-                    ':',
-                    [!Ref 'EnvironmentName', 'Sau2RequestFilesBucketArn'],
-                ]

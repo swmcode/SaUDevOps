@@ -11,12 +11,6 @@ Parameters:
     EnvSecretArn:
         Type: String
         Description: ARN of the AWS Secrets Manager secert for environments' vars
-    RequestTableDynamoDbArn:
-        Type: String
-        Description: ARN of the AWS DynamoDB created for SaU2 Data
-    Sau2RequestFilesBucketArn:
-        Type: String
-        Description: ARN of the AWS S3 bucket created for SaU2 request file uploads
 
 Mappings:
     # Hard values for the subnet masks. These masks define
@@ -347,62 +341,6 @@ Resources:
                                 - 'ecs:UpdateService'
                             Resource: '*'
 
-    # A role for the service so it can access request dynamodb and request file upload bucket (S3)
-    SaU2ServiceRole:
-        Type: AWS::IAM::Role
-        Properties:
-            AssumeRolePolicyDocument:
-                Statement:
-                    - Effect: Allow
-                      Principal:
-                          Service: 'ecs-tasks.amazonaws.com'
-                      Action: ['sts:AssumeRole']
-            Path: /
-            Policies:
-                - PolicyName: sau2-dynamodb-table
-                  PolicyDocument:
-                      Statement:
-                          - Effect: Allow
-                            Action:
-                                - 's3:GetObject'
-                                - 's3:GetObjectVersion'
-                                - 's3:GetBucketVersioning'
-                                - 's3:PutObject'
-                                - 's3:DeleteObject'
-                                - 's3:ListBucket'
-                            Resource:
-                                - !Ref Sau2RequestFilesBucketArn
-                                - !Join [
-                                      '',
-                                      [!Ref Sau2RequestFilesBucketArn, '/*'],
-                                  ]
-
-                          - Effect: Allow
-                            Action:
-                                - 'dynamodb:PutItem'
-                                - 'dynamodb:GetItem'
-                                - 'dynamodb:Query'
-                                - 'dynamodb:Scan'
-                                - 'dynamodb:UpdateItem'
-                                - 'dynamodb:DeleteItem'
-                                - 'dynamodb:DescribeTable'
-                            Resource:
-                                - !Join [
-                                      '',
-                                      [
-                                          'arn:aws:dynamodb:*:*:table/',
-                                          !Ref 'RequestTableDynamoDbArn',
-                                      ],
-                                  ]
-                                - !Join [
-                                      '',
-                                      [
-                                          'arn:aws:dynamodb:*:*:table/',
-                                          !Ref 'RequestTableDynamoDbArn',
-                                          '/index/*',
-                                      ],
-                                  ]
-
 # These are the values output by the CloudFormation template. Be careful
 # about changing any of them, because they are exported with specific
 # names so that the other task related CF templates can use them.
@@ -482,8 +420,3 @@ Outputs:
                     ':',
                     [!Ref 'EnvironmentName', 'FargateContainerSecurityGroup'],
                 ]
-    SaU2ServiceRole:
-        Description: The role of the SaU2 service
-        Value: !GetAtt 'SaU2ServiceRole.Arn'
-        Export:
-            Name: !Join [':', [!Ref 'EnvironmentName', 'SaU2ServiceRole']]
