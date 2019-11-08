@@ -10,7 +10,7 @@ A robust approach has been taken with the individual SaUClient and SaUServer rep
 
 A master template is used to create the entire SaU application stack, this master template calls the other templates which create base resources (accounts, network, S3 bucket, other...), client and server CI/CD CodePipelines, CloudFront Distribution and DNS alias records.
 
-The master template is parameterized allowing for domain, subdomain (environment), github info (including target branch), environment vars (as AWS Managed Secret), SSL Cert and S3 Bucket URI (where CF templates can be found) to be passed when setting-up stack creation. Use of parameters, nested templates and CI/CD infrastructure allows for whole application environments to be created and managed with CI/CD, with this you can do the following:
+The master template is parameterized allowing for domain, subdomain (environment), github info (including target branch), environment vars (as AWS Managed Secret), SSL Cert(s) (for both site and API) and S3 Bucket URI (where CF templates can be found) to be passed when setting-up stack creation. Use of parameters, nested templates and CI/CD infrastructure allows for whole application environments to be created and managed with CI/CD, with this you can do the following:
 
 -   Create Production environment (www.submitanupdate.com) targeting GitHub Master branches for SaUClient and SaUServer, so as code is merged to Master branch it is deployed to production environment.
 
@@ -22,6 +22,4 @@ As of 09/07/2019, tickets exists for building out automated integration and func
 
 ### CloudFormation (CF) Template CI
 
-A CodePipeline should/could be built out using CF that will integrate with GitHub using Webhook, and would pull updated CF templates on GitHub Push and execute fullstack template, then run integration and functional tests and then delete/remove stack.
-
-As of 09/07/2019 there is a ticket for this work.
+A CodePipeline should/could be built out using CF that will integrate with GitHub using Webhook, and would pull updated CF templates on GitHub Push and execute fullstack template, then run integration and functional tests and then delete/remove stack. As of 09/07/2019 there is a ticket for this work.
