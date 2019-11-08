@@ -24,7 +24,7 @@ Parameters:
         Description: 'Route53 Hosted Zone Name e.g., submitanupdate2.com'
     CertificateArn:
         Type: String
-        Description: 'ARN of the Amazon Certificate Manager SSL certificate to use for this app'
+        Description: 'ARN of the Amazon Certificate Manager SSL certificate to use for site'
 
 Resources:
     Distribution:
