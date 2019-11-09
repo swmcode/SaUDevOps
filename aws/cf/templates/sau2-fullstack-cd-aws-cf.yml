@@ -27,9 +27,12 @@ Parameters:
     EnvironmentName:
         Type: String
         Description: "Target environment to deploy source. For production use 'prod'"
-    CertificateArn:
+    ApiCertificateArn:
         Type: String
-        Description: ARN of the Amazon Certificate Manager SSL certificate to use for this app
+        Description: ARN of the Amazon Certificate Manager SSL certificate to use for API (e.g., www-api.submitanupdate.com)
+    SiteCertificateArn:
+        Type: String
+        Description: ARN of the Amazon Certificate Manager SSL certificate to use for site (e.g., www.submitanupdate.com)
     EnvSecretArn:
         Type: String
         Description: ARN of the AWS Secrets Manager key for environment vars JSON object string
@@ -65,7 +68,7 @@ Resources:
                 ]
             Parameters:
                 EnvironmentName: !Ref EnvironmentName
-                CertificateArn: !Ref CertificateArn
+                CertificateArn: !Ref ApiCertificateArn
                 EnvSecretArn: !Ref EnvSecretArn
 
     SaUDynamoDB:
@@ -77,20 +80,6 @@ Resources:
                     [
                         !Ref TemplateS3Bucket,
                         'sau2-rest-service-dynamodb-aws-cf.yml',
-                    ],
-                ]
-            Parameters:
-                EnvironmentName: !Ref EnvironmentName
-
-    SaUFileBucket:
-        Type: AWS::CloudFormation::Stack
-        Properties:
-            TemplateURL:
-                !Join [
-                    '/',
-                    [
-                        !Ref TemplateS3Bucket,
-                        'sau2-rest-service-file-buckets-aws-cf.yml',
                     ],
                 ]
             Parameters:
@@ -111,9 +100,7 @@ Resources:
                 GitHubOAuthToken: !Ref GitHubOAuthToken
                 GitHubSecret: !Ref GitHubSecret
                 EnvironmentName: !Ref EnvironmentName
-                CertificateArn: !Ref CertificateArn
                 EnvSecretArn: !Ref EnvSecretArn
-                HostZoneName: !Ref HostZoneName
                 CloudFormationDeployRoleArn: !GetAtt SaUServerResources.Outputs.CloudFormationDeployRoleArn
 
     SaUAliasServer:
@@ -163,7 +150,7 @@ Resources:
                     - ApiSubDomain: !If [IsProd, '', !Ref EnvironmentName]
                       ApiSubDomainSuffix: !If [IsProd, 'api', '-api']
                 HostZoneName: !Ref HostZoneName
-                CertificateArn: !Ref CertificateArn
+                CertificateArn: !Ref SiteCertificateArn
 
     SaUClientCD:
         Type: AWS::CloudFormation::Stack

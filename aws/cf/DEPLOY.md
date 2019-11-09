@@ -23,6 +23,17 @@ Once your domain is purchased and processed you'll see it show up on [your list 
 
 ## 2. Register an SSL certificate for the domain
 
+SSL Certificate(s) are used to support https protocl for site and backing API. If using a wildcard (e.g., \*.submitanupdate.com) for cert you can use the same cert for both site and API, as described in following documentation. If using named cert for site (e.g., mydev.submitanupdate.com) you will need to create a second cert for API (e.g., mydev-api.submitanupdate.com).
+
+The pattern the templates use with stack creation is to create a subdomain using the value provided for the "environment name" and "host name" parameters, so if you passed to the template "sau2-fullstack-cd-aws-cf.yml", the following parameter values -
+
+EnvironmentName="foo"
+HostZoneName="bar.com"
+
+The templates would constructe the following subdomain "foo.bar.com"
+
+You would need to create either a single wildcard cert "\*.bar.com" or two certs, one for site "foo.bar.com" and one for API "foo-api.bar.com"
+
 Please besure you under stand the following requirements for [importing into AWS Certificate Manager (ACM)](https://docs.aws.amazon.com/acm/latest/userguide/import-certificate-prerequisites.html), or for [association with a distribution](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html):
 
 -   The certificate must be imported in the US East (N. Virginia) Region.
@@ -36,7 +47,11 @@ Go to [Amazon Certificate Manager](https://console.aws.amazon.com/acm/home) to g
 
 Then select a "public certificate" because this is the certificate public web browsers will use for communicating securely with SaU application.
 
-Then add the list of domains that should be covered by the SSL certificate --the pattern we use with stack creation is to create a subdomain using the provided "environment name", to support any subdomain use the wildcard for subdomain. You may also want to specify the "bare domain" in the same certificate:
+Then add the list of domains that should be covered by the SSL certificate.
+
+> Note: Use of wildcard (e.g., '\*.submitanupdate.com') for cert provides support for any subdomain, requiring you to only create a single cert, once, for both site and API across all environments for hosted zone name (domain).
+>
+> You may also want to specify the "bare domain" in the same certificate:
 
 <img src='https://github.com/swmcode/SaUDevOps/blob/master/aws/cf/docs/images/cert-domain-list.jpg' width='50%' />
 
