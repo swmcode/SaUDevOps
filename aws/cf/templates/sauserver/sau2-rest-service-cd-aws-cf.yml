@@ -72,6 +72,16 @@ Resources:
                                 - ecr:InitiateLayerUpload
                                 - ecr:UploadLayerPart
                                 - ecr:CompleteLayerUpload
+                          - Resource: !Sub arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/sauservernodebaseimage
+                            Effect: Allow
+                            Action:
+                                - ecr:GetDownloadUrlForLayer
+                                - ecr:BatchGetImage
+                                - ecr:BatchCheckLayerAvailability
+                                - ecr:PutImage
+                                - ecr:InitiateLayerUpload
+                                - ecr:UploadLayerPart
+                                - ecr:CompleteLayerUpload
 
     # Role used to give CodePipeline to release a build.
     CodePipelineServiceRole:
@@ -157,6 +167,10 @@ Resources:
                 Type: CODEPIPELINE
             Source:
                 Type: CODEPIPELINE
+                # The value for Environment.Image is currently deprecated. The command
+                # $(aws ecr get-login --no-include-email)
+                # may be replaced with
+                # aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${REPOSITORY_URI}
                 BuildSpec: |
                     version: 0.2
                     phases:
@@ -165,10 +179,10 @@ Resources:
                           - $(aws ecr get-login --no-include-email)
                           # TODO: want to be more explicted with tagging, like to use semantic versioning, also include tags for commit and branch
                           - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                          - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+                          - IMAGE_URI="${REPOSITORY_URI}/${REPOSITORY_NAME_SaUServer}:${TAG}"
                       build:
                         commands:
-                          - docker build --tag "${IMAGE_URI}" .
+                          - docker build -f docker/Dockerfile.ApplySaU --tag "${IMAGE_URI}" .
                       post_build:
                         commands:
                           - docker push "$IMAGE_URI"
@@ -177,13 +191,17 @@ Resources:
                       files: build.json
             Environment:
                 ComputeType: BUILD_GENERAL1_SMALL
-                Image: aws/codebuild/docker:17.09.0
+                Image: aws/codebuild/docker:17.09.0   # docker:17.09.0 is deprecated. This is a newer image: aws/codebuild/amazonlinux2-x86_64-standard:3.0-20.09.14
                 Type: LINUX_CONTAINER
                 EnvironmentVariables:
                     - Name: AWS_DEFAULT_REGION
                       Value: !Ref AWS::Region
                     - Name: REPOSITORY_URI
-                      Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+                      Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
+                    - Name: REPOSITORY_NAME_SaUServer
+                      Value: !Sub ${Repository}
+                    - Name: REPOSITORY_NAME_BASE
+                      Value: sauservernodebaseimage
             Name: !Ref AWS::StackName
             ServiceRole: !Ref CodeBuildServiceRole
 
