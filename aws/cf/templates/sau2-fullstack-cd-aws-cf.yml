@@ -27,6 +27,7 @@ Parameters:
     EnvironmentName:
         Type: String
         Description: "Target environment to deploy source. For production use 'prod'"
+        Default: dev
     ApiCertificateArn:
         Type: String
         Description: ARN of the Amazon Certificate Manager SSL certificate to use for API (e.g., www-api.submitanupdate.com)
@@ -43,7 +44,7 @@ Parameters:
     TemplateS3Bucket:
         Type: String
         Description: Root URL for S3 Bucket where nested CF templates can be found
-        Default: https://sau-devops.s3.amazonaws.com
+        Default: https://sau-cf-code.s3.amazonaws.com
 
 Conditions:
     # determines if passed target environment is 'prod'
@@ -70,20 +71,6 @@ Resources:
                 EnvironmentName: !Ref EnvironmentName
                 CertificateArn: !Ref ApiCertificateArn
                 EnvSecretArn: !Ref EnvSecretArn
-
-    SaUDynamoDB:
-        Type: AWS::CloudFormation::Stack
-        Properties:
-            TemplateURL:
-                !Join [
-                    '/',
-                    [
-                        !Ref TemplateS3Bucket,
-                        'sau2-rest-service-dynamodb-aws-cf.yml',
-                    ],
-                ]
-            Parameters:
-                EnvironmentName: !Ref EnvironmentName
 
     SaUServerCD:
         Type: AWS::CloudFormation::Stack
