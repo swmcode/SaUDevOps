@@ -231,7 +231,6 @@ Resources:
                                 - 'ecs:*'
                                 - 'elasticloadbalancing:*'
                                 - 'autoscaling:*'
-                                - 'dynamodb:*'
                                 - 'elasticache:*'
                                 - 'logs:*'
                                 - 'application-autoscaling:*'
