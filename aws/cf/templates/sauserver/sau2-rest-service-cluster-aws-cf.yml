@@ -339,7 +339,28 @@ Resources:
                                 - 'ecs:DescribeServices'
                                 - 'ecs:UpdateService'
                             Resource: '*'
-
+    
+    # Caching Config
+    # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-elasticache-cache-cluster.html#aws-properties-elasticache-cache-cluster-syntax
+    RedisCache:
+        Type: AWS::ElastiCache::CacheCluster
+        Properties:
+            #Specifies whether the nodes in this Memcached cluster are created in a single Availability Zone or created across multiple Availability Zones in the cluster's region.
+            #AZMode: String
+            CacheNodeType: cache.t2.micro
+            Engine: redis
+            #The version number of the cache engine to be used for this cluster. To view the supported cache engine versions, use the DescribeCacheEngineVersions operation.
+            #Important: You can upgrade to a newer engine version (see Selecting a Cache Engine and Version), but you cannot downgrade to an earlier engine version. If you want to use an earlier engine version, you must delete the existing cluster or replication group and create it anew with the earlier engine version.
+            #EngineVersion: String
+            NumCacheNodes: 1
+            Port: 6379
+            PreferredAvailabilityZone:
+                Fn::Select:
+                    - 0
+                    - Fn::GetAZs: { Ref: 'AWS::Region' }
+            PreferredMaintenanceWindow: tue:02:00-tue:05:00
+            VpcSecurityGroupIds: 
+                - !Ref 'VPC'
 # These are the values output by the CloudFormation template. Be careful
 # about changing any of them, because they are exported with specific
 # names so that the other task related CF templates can use them.
@@ -419,3 +440,10 @@ Outputs:
                     ':',
                     [!Ref 'EnvironmentName', 'FargateContainerSecurityGroup'],
                 ]
+    RedisCacheUrl:
+        Description: The full url for the redis cache instance
+        Value:
+            !Join [
+                ':',
+                [!Ref 'RedisCache.RedisEndpoint.Address', !Ref 'RedisCache.RedisEndpoint.Port'],
+            ]

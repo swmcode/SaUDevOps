@@ -24,6 +24,9 @@ Parameters:
         Description: ARN of the AWS Secrets Manager secert for environments' vars
     CloudFormationDeployRoleArn:
         Type: String
+    RedisCacheUrl:
+        Type: String
+        Description: Full url for Redis cache instance
 
 Resources:
     # Create the ECR respository to hold built docker images (i think we want to pass this in as an existing AWS ECR)
@@ -273,7 +276,8 @@ Resources:
                                   "EnvSecretArn": "${EnvSecretArn}",
                                   "ImageUrl": {
                                     "Fn::GetParam" : ["BuildOutput", "build.json", "ImageUri"]
-                                  }
+                                  },
+                                  "RedisCacheUrl": "${RedisCacheUrl}"
                                 }
                         InputArtifacts:
                             - Name: Source
