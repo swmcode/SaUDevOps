@@ -89,6 +89,7 @@ Resources:
                 EnvironmentName: !Ref EnvironmentName
                 EnvSecretArn: !Ref EnvSecretArn
                 CloudFormationDeployRoleArn: !GetAtt SaUServerResources.Outputs.CloudFormationDeployRoleArn
+                RedisCacheUrl: !GetAtt SaUServerResources.Outputs.RedisCacheUrl
 
     SaUAliasServer:
         Type: AWS::CloudFormation::Stack
