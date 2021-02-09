@@ -128,6 +128,13 @@ Resources:
             GroupId: !Ref 'FargateContainerSecurityGroup'
             IpProtocol: -1
             SourceSecurityGroupId: !Ref 'FargateContainerSecurityGroup'
+    EcsSecurityGroupIngressFromRedisCluster:
+        Type: AWS::EC2::SecurityGroupIngress
+        Properties:
+            Description: Ingress from the Redis cluster
+            GroupId: !Ref 'FargateContainerSecurityGroup'
+            IpProtocol: -1
+            SourceSecurityGroupId: !Ref 'RedisCacheSecurityGroup'
 
     # Load balancers for getting traffic to containers.
     # This sample template creates one load balancer:
@@ -340,7 +347,20 @@ Resources:
                                 - 'ecs:UpdateService'
                             Resource: '*'
     
-    # Caching Config
+    # Cachine Config SecurityGroup
+    RedisCacheSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: Access to the Redis cluster
+            VpcId: !Ref 'VPC'
+    RedisCacheSecurityGroupIngressFromFargate:
+        Type: AWS::EC2::SecurityGroupIngress
+        Properties:
+            Description: Ingress from the Fargate containers
+            GroupId: !Ref 'RedisCacheSecurityGroup'
+            IpProtocol: -1
+            SourceSecurityGroupId: !Ref 'FargateContainerSecurityGroup'
+    # Caching Config Redis Cluster
     # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-elasticache-cache-cluster.html#aws-properties-elasticache-cache-cluster-syntax
     RedisCache:
         Type: AWS::ElastiCache::CacheCluster
@@ -360,7 +380,7 @@ Resources:
                     - Fn::GetAZs: { Ref: 'AWS::Region' }
             PreferredMaintenanceWindow: tue:02:00-tue:05:00
             VpcSecurityGroupIds: 
-                - !Ref 'VPC'
+                - !Ref 'RedisCacheSecurityGroup'
 # These are the values output by the CloudFormation template. Be careful
 # about changing any of them, because they are exported with specific
 # names so that the other task related CF templates can use them.
