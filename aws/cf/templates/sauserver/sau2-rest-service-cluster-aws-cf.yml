@@ -489,6 +489,6 @@ Outputs:
         Description: The full url for the redis cache instance
         Value:
             !Join [
-                ':',
-                ['redis://', !GetAtt 'RedisCache.RedisEndpoint.Address', !GetAtt 'RedisCache.RedisEndpoint.Port'],
+                '',
+                ['redis://', !GetAtt 'RedisCache.RedisEndpoint.Address', ':', !GetAtt 'RedisCache.RedisEndpoint.Port'],
             ]
