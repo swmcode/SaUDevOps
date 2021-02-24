@@ -31,6 +31,8 @@ Mappings:
             CIDR: '10.0.0.0/24'
         PublicTwo:
             CIDR: '10.0.1.0/24'
+        Private:
+            CIDR: '10.0.2.0/24'
 Resources:
     # VPC in which containers will be networked.
     # It has two public subnets
@@ -64,6 +66,17 @@ Resources:
             VpcId: !Ref 'VPC'
             CidrBlock: !FindInMap ['SubnetConfig', 'PublicTwo', 'CIDR']
             MapPublicIpOnLaunch: true
+    # One private subnet
+    PrivateSubnet:
+        Type: AWS::EC2::Subnet
+        Properties:
+            AvailabilityZone:
+                Fn::Select:
+                    - 0
+                    - Fn::GetAZs: { Ref: 'AWS::Region' }
+            VpcId: !Ref 'VPC'
+            CidrBlock: !FindInMap ['SubnetConfig', 'Private', 'CIDR']
+            MapPublicIpOnLaunch: false
 
     # Setup networking resources for the public subnets. Containers
     # in the public subnets have public IP addresses and the routing table
@@ -347,7 +360,7 @@ Resources:
                                 - 'ecs:UpdateService'
                             Resource: '*'
     
-    # Cachine Config SecurityGroup
+    # Cachine Config Security Group
     RedisCacheSecurityGroup:
         Type: AWS::EC2::SecurityGroup
         Properties:
@@ -360,10 +373,21 @@ Resources:
             GroupId: !Ref 'RedisCacheSecurityGroup'
             IpProtocol: -1
             SourceSecurityGroupId: !Ref 'FargateContainerSecurityGroup'
+    # Caching Config Redis Subnet Group
+    RedisCacheSubnetGroup:
+        Type: 'AWS::ElastiCache::SubnetGroup'
+        Properties:
+            CacheSubnetGroupName: rediscachesubnetgroup
+            Description: Redis Cache Subnet Group
+            SubnetIds:
+                - !Ref PrivateSubnet
     # Caching Config Redis Cluster
     # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-elasticache-cache-cluster.html#aws-properties-elasticache-cache-cluster-syntax
     RedisCache:
         Type: AWS::ElastiCache::CacheCluster
+        DependsOn:
+            - RedisCacheSubnetGroup
+            - RedisCacheSecurityGroup
         Properties:
             #Specifies whether the nodes in this Memcached cluster are created in a single Availability Zone or created across multiple Availability Zones in the cluster's region.
             #AZMode: String
@@ -379,6 +403,7 @@ Resources:
                     - 0
                     - Fn::GetAZs: { Ref: 'AWS::Region' }
             PreferredMaintenanceWindow: tue:02:00-tue:05:00
+            CacheSubnetGroupName: rediscachesubnetgroup
             VpcSecurityGroupIds: 
                 - !Ref 'RedisCacheSecurityGroup'
 # These are the values output by the CloudFormation template. Be careful
@@ -464,6 +489,6 @@ Outputs:
         Description: The full url for the redis cache instance
         Value:
             !Join [
-                ':',
-                [!Ref 'RedisCache.RedisEndpoint.Address', !Ref 'RedisCache.RedisEndpoint.Port'],
+                '',
+                ['redis://', !GetAtt 'RedisCache.RedisEndpoint.Address', ':', !GetAtt 'RedisCache.RedisEndpoint.Port'],
             ]
