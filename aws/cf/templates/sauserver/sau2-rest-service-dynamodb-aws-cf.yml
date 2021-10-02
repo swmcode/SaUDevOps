@@ -24,7 +24,13 @@ Parameters:
 Resources:
     Sau2RequestFilesBucket:
         Type: 'AWS::S3::Bucket'
-        Properties: {}
+        Properties:
+            LifecycleConfiguration:
+                Rules:
+                    - Id: CleanTempFolderRule
+                    Prefix: temporary
+                    Status: Enabled
+                    ExpirationInDays: 2
 
     # Table for storing SaU2 Service data
     RequestTable:
